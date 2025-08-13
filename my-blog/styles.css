@@ -1,0 +1,15 @@
+/* css styles */
+.navbar {
+  background-color: #044368 !important; /* dark navy */
+}
+
+/* Navbar text color */
+.navbar a,
+.navbar .navbar-brand {
+  color: #DEDFDF !important;
+}
+
+/* Navbar links on hover (optional: slightly brighter) */
+.navbar a:hover {
+  color: #ffffff !important;
+}
