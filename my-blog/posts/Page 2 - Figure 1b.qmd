@@ -8,7 +8,6 @@ categories:
   - Poverty
 ---
 
-Number of people living on less than $6.85 per day has remained unchanged since 1990
 
 
 <div class="flourish-embed flourish-chart" data-src="visualisation/19942475">
