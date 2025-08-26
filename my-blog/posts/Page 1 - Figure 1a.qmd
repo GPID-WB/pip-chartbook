@@ -8,7 +8,7 @@ categories:
   - Poverty
 ---
 
-Progress in reducing extreme poverty has come to a halt
+
 
 
 <div class="flourish-embed flourish-chart" data-src="visualisation/19942192">
