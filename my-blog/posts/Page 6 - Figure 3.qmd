@@ -1,0 +1,26 @@
+---
+title: "Figure 3"
+description: "Poverty is still above prepandemic levels in the poorest countries"
+order: 6
+format: html
+image: /images/Fig3.png
+categories:
+  - Poverty
+---
+
+Poverty is still above prepandemic levels in the poorest countries
+
+<div class="flourish-embed flourish-chart" data-src="/visualisation/22177056">
+  <script src="https://public.flourish.studio/resources/embed.js"></script>
+  <noscript>
+    <img src="https://public.flourish.studio/visualisation/22177056/thumbnail" width="100%" alt="chart visualization" />
+  </noscript>
+</div>
+
+
+
+<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+
+Source: World Bank, Poverty and Inequality Platform (version September 2024), https://pip.worldbank.org/. Note: Poverty rates are reported for the $2.15, $3.65, and $6.85 per person per day poverty lines (expressed in 2017 purchasing power parity dollars). Between 2022 and 2029 poverty is projected based on per capita gross domestic product growth projections in Global Economic Prospects, June 2024 (World Bank 2024c) complemented by the Macro Poverty Outlook, Spring Meetings 2024 (World Bank 2024e) and the World Economic Outlook (IMF 2024); for 2030, average annual historic per capita growth rates (2010–19) are used. See annex 1A for more details on the projection methods. In panel a, the black horizontal dotted line is drawn at 3 percent and indicates the World Bank’s target of ending extreme poverty by 2030. In panel b, it is drawn at 256 million, which represents 3 percent of the global population projected for 2030.
+
+</p>
