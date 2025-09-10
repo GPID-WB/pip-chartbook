@@ -27,6 +27,9 @@ library(Hmisc)
 library(tidyr)
 library(stringr)
 library(ggplot2)
+library(glue)
+library(rlang)
+
 
 
 # ---- 2. Define Various Inputs ----
@@ -170,14 +173,33 @@ last_actual_year <- dta_fig_1a_wide %>%
   pull(max_year)
 
 # 3- Add value 
-dta_fig_1a_wide <- dta_fig_1a_wide %>%
-  mutate(headcount_nowcast_pl_3.0 = if_else(year == last_actual_year, headcount_actual_pl_3.0, headcount_nowcast_pl_3.0),
-         headcount_nowcast_pl_4.2 = if_else(year == last_actual_year, headcount_actual_pl_4.2, headcount_nowcast_pl_4.2),
-         headcount_nowcast_pl_8.3 = if_else(year == last_actual_year, headcount_actual_pl_8.3, headcount_nowcast_pl_8.3),
-         pop_in_poverty_nowcast_pl_3.0 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_3.0, pop_in_poverty_nowcast_pl_3.0),
-         pop_in_poverty_nowcast_pl_4.2 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_4.2, pop_in_poverty_nowcast_pl_4.2),
-         pop_in_poverty_nowcast_pl_8.3 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_8.3, pop_in_poverty_nowcast_pl_8.3)
-         )
+
+pl_str <- format(pov_lines, nsmall = 1, trim = TRUE)  # "3.0", "4.2", "8.3"
+
+for (pl in pl_str) {
+  dta_fig_1a_wide <- dta_fig_1a_wide %>%
+    mutate(
+      !!glue("headcount_nowcast_pl_{pl}") := if_else(
+        year == last_actual_year,
+        .data[[glue("headcount_actual_pl_{pl}")]],
+        .data[[glue("headcount_nowcast_pl_{pl}")]]
+      ),
+      !!glue("pop_in_poverty_nowcast_pl_{pl}") := if_else(
+        year == last_actual_year,
+        .data[[glue("pop_in_poverty_actual_pl_{pl}")]],
+        .data[[glue("pop_in_poverty_nowcast_pl_{pl}")]]
+      )
+    )
+}
+
+# dta_fig_1a_wide <- dta_fig_1a_wide %>%
+#   mutate(headcount_nowcast_pl_3.0 = if_else(year == last_actual_year, headcount_actual_pl_3.0, headcount_nowcast_pl_3.0),
+#          headcount_nowcast_pl_4.2 = if_else(year == last_actual_year, headcount_actual_pl_4.2, headcount_nowcast_pl_4.2),
+#          headcount_nowcast_pl_8.3 = if_else(year == last_actual_year, headcount_actual_pl_8.3, headcount_nowcast_pl_8.3),
+#          pop_in_poverty_nowcast_pl_3.0 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_3.0, pop_in_poverty_nowcast_pl_3.0),
+#          pop_in_poverty_nowcast_pl_4.2 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_4.2, pop_in_poverty_nowcast_pl_4.2),
+#          pop_in_poverty_nowcast_pl_8.3 = if_else(year == last_actual_year, pop_in_poverty_actual_pl_8.3, pop_in_poverty_nowcast_pl_8.3)
+#          )
 
 
 # 5) Other necessary adjustments 
@@ -206,3 +228,26 @@ dta_fig_1a_final <- dta_fig_1a_wide %>%
 # 8) Export csv file 
 write_csv(dta_fig_1a_final, "csv/chartbook_fig_1a.csv")
 
+
+# ---- 2. Figure 1b. Number of Poor (millions) ----
+
+# 1) Copy data file from figure 1 
+dta_fig_1b_final <- dta_fig_1a_final 
+
+# 2) Only minor changes is variable names for millions of poor forecatsed 
+pl_suffix <- gsub("\\.", "", format(pov_lines, nsmall = 1, trim = TRUE))
+pl_label  <- format(pov_lines, nsmall = 1, trim = TRUE)
+
+# Create a named vector for renaming
+rename_vec <- setNames(
+  glue("pop_in_poverty{pl_suffix}_forecast"),
+  glue("Millions of poor at ${pl_label} (forecast)")
+  
+)
+
+# Apply renaming
+dta_fig_1b_final <- dta_fig_1b_final %>%
+  rename(!!!rename_vec)
+
+# 3) Export csv file 
+write_csv(dta_fig_1b_final, "csv/chartbook_fig_1b.csv")
