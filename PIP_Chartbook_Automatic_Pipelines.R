@@ -36,11 +36,21 @@ library(rlang)
 
 pov_lines <- c(3.0, 4.2, 8.3)
 
+# Figure 1
+# *********
 line3pct <- 0 
-
 millions3pct2030 <- 256
+year_start_fig1 <- 1990
 
-year_start <- 1990
+# Figure 2
+# *********
+year_start_fig2 <- 2010
+
+# Figure 3 
+# *********
+year_start_fig3 <- 2019
+year_end_fig3 <- 2024
+
 
 # ---- 3. Load Data     ----
 
@@ -56,6 +66,14 @@ dta_pip <- get_wb(
   format = c("rds", "json", "csv"),
   simplify = TRUE,
   server = NULL
+)
+
+dta_pip_ctry <- get_stats(
+  country = "all", 
+  year = "all", 
+  reporting_level = "national", 
+  povline = pov_lines,
+  nowcast = TRUE
 )
 
 ## 2) Class data
@@ -204,7 +222,7 @@ for (pl in pl_str) {
 
 # 5) Other necessary adjustments 
 dta_fig_1a_wide <- dta_fig_1a_wide %>%
-  filter(year >= year_start) %>% # ensure correct starting year 
+  filter(year >= year_start_fig1) %>% # ensure correct starting year 
   mutate(across(everything(), ~ suppressWarnings(as.numeric(.)))) %>% # ensure all columns are numeric
   mutate(across(where(is.numeric), ~ {
     if (startsWith(cur_column(), "headcount_")) round(., 5) 
@@ -251,3 +269,141 @@ dta_fig_1b_final <- dta_fig_1b_final %>%
 
 # 3) Export csv file 
 write_csv(dta_fig_1b_final, "csv/chartbook_fig_1b.csv")
+
+
+# ---- (WIP) 3. Figure 2a. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
+
+# 1) Add new rows up to 2050
+new_years <- data.frame(year = (2031:2050))
+
+# 2) Create data frame 
+dta_fig_2a <- bind_rows(dta_fig_1b_final, new_years)
+
+dta_fig_2a <- dta_fig_2a %>%
+  select(year, `Poverty rate at $3.0`) %>%
+  filter(year >= year_start_fig2) %>%
+  rename(Observed = `Poverty rate at $3.0`) %>%
+  mutate(Observed = 100*as.numeric(Observed)) # persent as Percentage Point 
+
+
+
+# ---- (WIP) 4. Figure 2b. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
+
+
+
+
+# ---- 5. Figure 3. Poverty is still above pre-pandemic levels ------
+
+# 1) Combine pip data with income group class 
+# Only use income group
+dta_class_inc <- dta_class %>%
+  select(code, incgroup_current) %>%
+  distinct() %>%
+  rename(country_code = code, 
+         inc_grp = incgroup_current)
+
+# 2) Combine with pip data 
+dta_fig_3 <- left_join(dta_pip_ctry, dta_class_inc, 
+                        by = "country_code") %>%
+  select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
+  filter(year >= year_start_fig3 &
+           year <= year_end_fig3)
+
+# 3) Split different poverty line (only first two)
+dta_fig_3a <- dta_fig_3 %>%
+  filter(poverty_line == 3.0)
+
+dta_fig_3b <- dta_fig_3 %>%
+  filter(poverty_line == 8.3)
+
+# Helper: keep only the last k non-NA entries for every "()" column
+.keep_last_k_paren <- function(df, k = 2) {
+  for (col in names(df)) {
+    if (grepl("\\(\\)", col)) {
+      non_na_idx <- which(!is.na(df[[col]]))
+      if (length(non_na_idx) > k) {
+        drop_idx <- head(non_na_idx, length(non_na_idx) - k)
+        df[[col]][drop_idx] <- NA
+      }
+    }
+  }
+  df
+}
+
+# Main: build the Fig 3 table
+build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
+  
+  # 1) Aggregate to weighted headcount by year / inc_grp / estimate_type
+  out <- data %>%
+    group_by(year, inc_grp, estimate_type) %>%
+    summarise(
+      weighted_value = sum(headcount * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    # Standardize group labels to match desired output
+    mutate(
+      inc_grp = recode(inc_grp,
+                       "Low income" = "Low-income",
+                       "Lower middle income" = "Lower-middle-income",
+                       "Upper middle income" = "Upper-middle-income",
+                       "High income" = "High-income"),
+      variable = paste(inc_grp, estimate_type, sep = " - ")
+    ) %>%
+    select(year, variable, weighted_value) %>%
+    pivot_wider(names_from = variable, values_from = weighted_value)
+  
+  # 2) Ensure columns exist even if missing after pivot (avoid mutate errors)
+  needed <- c(
+    "Low-income - actual", "Low-income - projection", "Low-income - nowcast",
+    "Lower-middle-income - actual", "Lower-middle-income - nowcast",
+    "Upper-middle-income - actual", "Upper-middle-income - nowcast"
+  )
+  for (nm in needed) if (!nm %in% names(out)) out[[nm]] <- NA_real_
+  
+  # 3) Merge actual / projection / nowcast as in your pipeline
+  # Low-income: prefer actual, then projection, then nowcast
+  out <- out %>%
+    mutate(
+      `Low-income` = if_else(!is.na(`Low-income - actual`), `Low-income - actual`, `Low-income - projection`),
+      `Low-income` = if_else(!is.na(`Low-income`), `Low-income`, `Low-income - nowcast`)
+    ) %>%
+    # For middle-income groups, ensure () (nowcast) exists; if missing, backfill from actual
+    mutate(
+      `Lower-middle-income - nowcast` = if_else(!is.na(`Lower-middle-income - nowcast`), `Lower-middle-income - nowcast`, `Lower-middle-income - actual`),
+      `Upper-middle-income - nowcast` = if_else(!is.na(`Upper-middle-income - nowcast`), `Upper-middle-income - nowcast`, `Upper-middle-income - actual`)
+    ) %>%
+    # Keep, then rename to final columns
+    select(
+      year,
+      `Low-income`,
+      `Lower-middle-income - actual`, `Lower-middle-income - nowcast`,
+      `Upper-middle-income - actual`, `Upper-middle-income - nowcast`
+    ) %>%
+    rename(
+      `Lower-middle-income`   = `Lower-middle-income - actual`,
+      `Lower-middle-income ()`= `Lower-middle-income - nowcast`,
+      `Upper-middle-income`   = `Upper-middle-income - actual`,
+      `Upper-middle-income ()`= `Upper-middle-income - nowcast`
+    )
+
+  # 4) Relative to base year, rounded to 2 decimals
+  out <- out %>%
+    mutate(across(-year, ~ .x / .x[year == year_start_fig3])) %>%
+    mutate(across(-year, ~ round(.x, 2)))
+
+  # 5) Keep only the last 'keep_last_k' non-NA values in each () column
+  out <- .keep_last_k_paren(out, k = keep_last_k)
+
+  # 6) Replace NA with "" for visual clarity
+  out <- out %>%
+    mutate(across(-year, ~ ifelse(is.na(.x), "", .x)))
+
+  out
+}
+
+dta_fig_3a_final <- build_fig3(dta_fig_3a, year_start_fig3 = year_start_fig3, keep_last_k = 2)
+dta_fig_3b_final <- build_fig3(dta_fig_3b, year_start_fig3 = year_start_fig3, keep_last_k = 2)
+
+# Export csv file 
+write_csv(dta_fig_3a_final, "csv/chartbook_fig_3a.csv")
+write_csv(dta_fig_3b_final, "csv/chartbook_fig_3b.csv")
