@@ -1,0 +1,346 @@
+
+# ------- identify the last actual year from wide table ---------
+
+.last_actual_year <- function(df_wide) {
+  actual_cols <- names(df_wide) %>% stringr::str_subset("^(headcount|pop_in_poverty)_actual_pl_")
+  if (length(actual_cols) == 0) return(NA_integer_)
+  ref <- actual_cols[1]
+  df_wide %>%
+    dplyr::filter(!is.na(.data[[ref]])) %>%
+    dplyr::summarise(max_year = max(year, na.rm = TRUE)) %>%
+    dplyr::pull(max_year)
+}
+
+# ------- Copy actual → nowcast for ONLY the last actual year (all pov lines) ---------
+
+.copy_last_actual_into_nowcast <- function(df_wide, pov_lines_fmt) {
+  last_year <- .last_actual_year(df_wide)
+  if (is.na(last_year)) return(df_wide)
+  
+  for (pl in pov_lines_fmt) {
+    hc_a <- glue("headcount_actual_pl_{pl}")
+    hc_n <- glue("headcount_nowcast_pl_{pl}")
+    po_a <- glue("pop_in_poverty_actual_pl_{pl}")
+    po_n <- glue("pop_in_poverty_nowcast_pl_{pl}")
+    
+    if (hc_a %in% names(df_wide) && hc_n %in% names(df_wide)) {
+      df_wide[[hc_n]] <- ifelse(df_wide$year == last_year,
+                                df_wide[[hc_a]], df_wide[[hc_n]])
+    }
+    if (po_a %in% names(df_wide) && po_n %in% names(df_wide)) {
+      df_wide[[po_n]] <- ifelse(df_wide$year == last_year,
+                                df_wide[[po_a]], df_wide[[po_n]])
+    }
+  }
+  df_wide
+}
+
+
+# ------- Safe weighted mean ---------
+
+wavg <- function(x, w) {
+  den <- sum(w, na.rm = TRUE)
+  ifelse(den > 0, sum(x * w, na.rm = TRUE) / den, NA_real_)
+}
+
+# Helper: keep only the last k non-NA entries for every "()" column
+
+.keep_last_k_paren <- function(df, k = 2) {
+  for (col in names(df)) {
+    if (grepl("\\(\\)", col)) {
+      non_na_idx <- which(!is.na(df[[col]]))
+      if (length(non_na_idx) > k) {
+        drop_idx <- head(non_na_idx, length(non_na_idx) - k)
+        df[[col]][drop_idx] <- NA
+      }
+    }
+  }
+  df
+}
+
+# ------- Extend historical growth ---------
+
+extend_with_hist_growth <- function(df, end_year) {
+  df <- df %>% arrange(year)
+  
+  # Base: last non-NA in "Current forecast + historical growth"
+  base_year <- max(df$year[!is.na(df$`Current forecast + historical growth`)], na.rm = TRUE)
+  base_val  <- df$`Current forecast + historical growth`[df$year == base_year][1]
+  
+  # Arithmetic mean of YoY growth from Observed (robust, simple)
+  g <- df %>%
+    arrange(year) %>%
+    transmute(gr = Observed / dplyr::lag(Observed) - 1) %>%
+    summarise(g = mean(gr, na.rm = TRUE)) %>%
+    pull(g)
+  
+  future_years <- seq(base_year + 1, end_year)
+  if (length(future_years) == 0 || is.na(base_val) || !is.finite(g)) return(df)
+  
+  future_vals <- as.numeric(base_val) * cumprod(rep(1 + g, length(future_years)))
+  
+  future_df <- tibble(
+    year = future_years,
+    `Current forecast + historical growth` = future_vals
+  )
+  
+  df %>%
+    left_join(future_df, by = "year", suffix = c("", ".new")) %>%
+    mutate(`Current forecast + historical growth` =
+             dplyr::coalesce(`Current forecast + historical growth`,
+                             `Current forecast + historical growth.new`)) %>%
+    select(-`Current forecast + historical growth.new`)
+}
+
+
+# ------- Fill Last Observed Year ---------
+
+fill_last_observed_year <- function(df, observed_col, year_col = "year", digits = 2) {
+  last_year <- max(df[[year_col]][!is.na(df[[observed_col]])], na.rm = TRUE)
+  last_val  <- round(df[[observed_col]][df[[year_col]] == last_year][1], digits)
+  
+  fill_cols <- setdiff(names(df), c(year_col, observed_col))
+  num_cols  <- fill_cols[sapply(df[fill_cols], is.numeric)]
+  
+  df %>%
+    mutate(across(
+      all_of(num_cols),
+      ~ ifelse(.data[[year_col]] == last_year & is.na(.x), last_val, .x)
+    ))
+}
+
+
+# ------- Builder for Figure 1 ---------
+
+# Inputs:
+#   dta_proj, dta_pip: long frames with region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type
+#   pov_lines: numeric vector, e.g. c(3.0, 4.2, 8.3)
+#   year_start_fig1: first year to keep in output
+#   line3pct, millions3pct2030: scalars to append as columns
+build_fig1 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, millions3pct2030) {
+  
+  pov_lines_fmt <- format(pov_lines, nsmall = 1, trim = TRUE)  # "3.0" "4.2" "8.3"
+  
+  # 1) Combine, keep World, fix estimate_type, convert pop to millions
+  dta <- dplyr::bind_rows(dta_proj, dta_pip) %>%
+    dplyr::select(region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type) %>%
+    dplyr::mutate(
+      estimate_type = dplyr::if_else(is.na(estimate_type), "nowcast", estimate_type),
+      estimate_type = dplyr::if_else(estimate_type == "projection", "actual", estimate_type),
+      estimate_type = stringr::str_to_lower(estimate_type)
+    ) %>%
+    dplyr::filter(region_name == "World") %>%
+    dplyr::mutate(pop_in_poverty = pop_in_poverty / 1e6) %>%  # millions
+    dplyr::select(-region_name)
+  
+  # 2) Long → wide (split by estimate_type), then split by poverty_line
+  wide <- dta %>%
+    tidyr::pivot_wider(
+      id_cols = c(year, poverty_line),
+      names_from = estimate_type,
+      values_from = c(headcount, pop_in_poverty),
+      names_glue = "{.value}_{estimate_type}"
+    ) %>%
+    dplyr::arrange(year, poverty_line) %>%
+    dplyr::mutate(poverty_line = format(as.numeric(poverty_line), nsmall = 1)) %>%
+    tidyr::pivot_wider(
+      id_cols = year,
+      names_from = poverty_line,
+      values_from = c(headcount_actual, headcount_nowcast,
+                      pop_in_poverty_actual, pop_in_poverty_nowcast),
+      names_glue = "{.value}_pl_{poverty_line}"
+    )
+  
+  # 3) Add extra series
+  wide <- wide %>%
+    dplyr::mutate(line3pct = !!line3pct,
+                  millions3pct2030 = !!millions3pct2030)
+  
+  # 4) Order columns programmatically
+  cols_order <- c(
+    "year",
+    as.vector(rbind(
+      glue("headcount_actual_pl_{pov_lines_fmt}"),
+      glue("pop_in_poverty_actual_pl_{pov_lines_fmt}")
+    )),
+    glue("headcount_nowcast_pl_{pov_lines_fmt}"),
+    glue("pop_in_poverty_nowcast_pl_{pov_lines_fmt}"),
+    c("line3pct", "millions3pct2030")
+  ) %>% unique()
+  
+  wide <- wide %>% dplyr::select(dplyr::any_of(cols_order))
+  
+  # 5) Copy actual to nowcast ONLY for the last actual year
+  wide <- .copy_last_actual_into_nowcast(wide, pov_lines_fmt)
+  
+  # 6) Filter start year, enforce numeric, apply rounding, NA → ""
+  wide <- wide %>%
+    dplyr::filter(year >= year_start_fig1) %>%
+    dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(.)))) %>%
+    dplyr::mutate(dplyr::across(where(is.numeric), ~ {
+      if (startsWith(cur_column(), "headcount_")) round(., 5) else round(., 0)
+    })) %>%
+    dplyr::mutate(dplyr::across(everything(), ~ ifelse(is.na(.), "", .)))
+  
+  # 7) Labels for Figure 1a
+  fig1a <- wide %>%
+    dplyr::rename_with(~ paste0("Poverty rate at $", stringr::str_extract(.x, "\\d+\\.\\d+")),
+                       dplyr::starts_with("headcount_actual_pl_")) %>%
+    dplyr::rename_with(~ paste0("Millions of poor at $", stringr::str_extract(.x, "\\d+\\.\\d+")),
+                       dplyr::starts_with("pop_in_poverty_actual_pl_")) %>%
+    dplyr::rename_with(~ paste0("Poverty rate at $", stringr::str_extract(.x, "\\d+\\.\\d+"), " (forecast)"),
+                       dplyr::starts_with("headcount_nowcast_pl_")) %>%
+    dplyr::rename_with(~ paste0("pop_in_poverty", gsub("\\.", "", stringr::str_extract(.x, "\\d+\\.\\d+")), "_forecast"),
+                       dplyr::starts_with("pop_in_poverty_nowcast_pl_"))
+  
+  # 8) Figure 1b: rename the forecast millions to display labels
+  pl_suffix <- gsub("\\.", "", pov_lines_fmt)
+  pl_label  <- pov_lines_fmt
+  rename_vec <- stats::setNames(
+    glue("pop_in_poverty{pl_suffix}_forecast"),
+    glue("Millions of poor at ${pl_label} (forecast)")
+  )
+  fig1b <- fig1a %>% dplyr::rename(!!!rename_vec)
+  
+  list(fig1a = fig1a, fig1b = fig1b)
+}
+
+
+# ------- Builder for Figure 2 ---------
+
+build_fig2 <- function(povline,
+                       year_start_fig2,
+                       year_end_fig2,
+                       dta_proj_scen_wide,
+                       dta_proj,
+                       round_digits = 2) {
+  
+  # 1) Observed (World) base
+  dta_fig_2 <- get_wb(povline = povline) %>%
+    select(region_name, year, headcount) %>%
+    filter(region_name == "World", year >= year_start_fig2) %>%
+    mutate(
+      `Observed` = headcount * 100,
+      `Current forecast + historical growth` = NA_real_,
+      `2% growth` = NA_real_,
+      `2% growth + Gini reduction 1%` = NA_real_,
+      `2% growth + Gini reduction 2%` = NA_real_,
+      `4% growth` = NA_real_
+    ) %>%
+    select(
+      year, `Observed`, `Current forecast + historical growth`,
+      `2% growth`, `2% growth + Gini reduction 1%`,
+      `2% growth + Gini reduction 2%`, `4% growth`
+    ) %>%
+    complete(year = full_seq(c(min(year), year_end_fig2), 1))
+  
+  # 2) Scenario rows for this povline
+  dta_proj_scen_p <- dta_proj_scen_wide %>% filter(povertyline == povline)
+  
+  # 3) Current forecast + historical growth from dta_proj (same povline)
+  dta_proj_fc <- dta_proj %>%
+    filter(poverty_line == povline) %>%
+    mutate(`Current forecast + historical growth` = headcount * 100) %>%
+    select(year, `Current forecast + historical growth`)
+  
+  # 4) Merge base + scenarios (avoid duplicate years), then bring in the FC column
+  out <- bind_rows(
+    dta_fig_2 %>% anti_join(dta_proj_scen_p, by = "year"),
+    dta_proj_scen_p
+  ) %>%
+    select(-povertyline) %>%
+    left_join(
+      dta_proj_fc %>% transmute(year, add_fc = as.numeric(`Current forecast + historical growth`)),
+      by = "year"
+    ) %>%
+    mutate(`Current forecast + historical growth` =
+             dplyr::coalesce(`Current forecast + historical growth`, add_fc)) %>%
+    select(-add_fc)
+  
+  # 5) Extend "Current forecast + historical growth" to end year using historical growth from Observed
+  out <- extend_with_hist_growth(out, end_year = year_end_fig2)
+  
+  # 6) Fill ONLY the last Observed year across other numeric columns if NA
+  out <- fill_last_observed_year(out, observed_col = "Observed", year_col = "year", digits = round_digits)
+  
+  # 7) Round all numeric columns except year
+  out <- out %>% mutate(across(c(where(is.numeric), -year), ~ round(.x, round_digits))) %>%
+    dplyr::mutate(across(-year, ~ ifelse(is.na(.x), "", .x)))
+  
+  out
+}
+
+
+
+# ------- Builder for Figure 3 ---------
+
+# Main: build the Fig 3 table
+build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
+  
+  # 1) Aggregate to weighted headcount by year / inc_grp / estimate_type
+  out <- data %>%
+    group_by(year, inc_grp, estimate_type) %>%
+    summarise(
+      weighted_value = sum(headcount * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    # Standardize group labels to match desired output
+    mutate(
+      inc_grp = recode(inc_grp,
+                       "Low income" = "Low-income",
+                       "Lower middle income" = "Lower-middle-income",
+                       "Upper middle income" = "Upper-middle-income",
+                       "High income" = "High-income"),
+      variable = paste(inc_grp, estimate_type, sep = " - ")
+    ) %>%
+    select(year, variable, weighted_value) %>%
+    pivot_wider(names_from = variable, values_from = weighted_value)
+  
+  # 2) Ensure columns exist even if missing after pivot (avoid mutate errors)
+  needed <- c(
+    "Low-income - actual", "Low-income - projection", "Low-income - nowcast",
+    "Lower-middle-income - actual", "Lower-middle-income - nowcast",
+    "Upper-middle-income - actual", "Upper-middle-income - nowcast"
+  )
+  for (nm in needed) if (!nm %in% names(out)) out[[nm]] <- NA_real_
+  
+  # 3) Merge actual / projection / nowcast as in your pipeline
+  # Low-income: prefer actual, then projection, then nowcast
+  out <- out %>%
+    mutate(
+      `Low-income` = if_else(!is.na(`Low-income - actual`), `Low-income - actual`, `Low-income - projection`),
+      `Low-income` = if_else(!is.na(`Low-income`), `Low-income`, `Low-income - nowcast`)
+    ) %>%
+    # For middle-income groups, ensure () (nowcast) exists; if missing, backfill from actual
+    mutate(
+      `Lower-middle-income - nowcast` = if_else(!is.na(`Lower-middle-income - nowcast`), `Lower-middle-income - nowcast`, `Lower-middle-income - actual`),
+      `Upper-middle-income - nowcast` = if_else(!is.na(`Upper-middle-income - nowcast`), `Upper-middle-income - nowcast`, `Upper-middle-income - actual`)
+    ) %>%
+    # Keep, then rename to final columns
+    select(
+      year,
+      `Low-income`,
+      `Lower-middle-income - actual`, `Lower-middle-income - nowcast`,
+      `Upper-middle-income - actual`, `Upper-middle-income - nowcast`
+    ) %>%
+    rename(
+      `Lower-middle-income`   = `Lower-middle-income - actual`,
+      `Lower-middle-income ()`= `Lower-middle-income - nowcast`,
+      `Upper-middle-income`   = `Upper-middle-income - actual`,
+      `Upper-middle-income ()`= `Upper-middle-income - nowcast`
+    )
+  
+  # 4) Relative to base year, rounded to 2 decimals
+  out <- out %>%
+    mutate(across(-year, ~ .x / .x[year == year_start_fig3])) %>%
+    mutate(across(-year, ~ round(.x, 2)))
+  
+  # 5) Keep only the last 'keep_last_k' non-NA values in each () column
+  out <- .keep_last_k_paren(out, k = keep_last_k)
+  
+  # 6) Replace NA with "" for visual clarity
+  out <- out %>%
+    mutate(across(-year, ~ ifelse(is.na(.x), "", .x)))
+  
+  out
+}
