@@ -426,4 +426,66 @@ build_fig4 <- function(df,
   out
 }
 
+# --- Recode region names to Chartbook labels (no scaling, just relabel) ---
+.recode_regions_fig4b <- function(df) {
+  df %>%
+    dplyr::mutate(
+      region = dplyr::recode(region_name,
+                             "East Asia & Pacific"         = "East Asia and Pacific",
+                             "Latin America & Caribbean"   = "Latin America and the Caribbean",
+                             "Middle East & North Africa"  = "Middle East and North Africa",
+                             "Other High Income Countries" = "Rest of the world",
+                             "Europe & Central Asia"       = "Europe and Central Asia",
+                             .default = region_name
+      )
+    )
+}
+
+# --- Build Fig 4b table from *shares* already computed ---
+# Expects columns: region_name, pop_share, pg_share
+build_fig4b_from_shares <- function(df, digits = 2) {
+  # Recode region labels
+  df1 <- .recode_regions_fig4b(df) %>%
+    dplyr::select(region, pop_share, pg_share)
+  
+  # Desired column order
+  col_order <- c(
+    "Sub-Saharan Africa",
+    "South Asia",
+    "East Asia and Pacific",
+    "Latin America and the Caribbean",
+    "Middle East and North Africa",
+    "Rest of the world",
+    "Europe and Central Asia"
+  )
+  
+  # Row 1: Prosperity Gap share
+  pg_row <- df1 %>%
+    dplyr::select(region, value = pg_share) %>%
+    tidyr::pivot_wider(names_from = region, values_from = value)
+  for (nm in col_order) if (!nm %in% names(pg_row)) pg_row[[nm]] <- NA_real_
+  pg_row <- pg_row %>%
+    dplyr::relocate(dplyr::all_of(col_order)) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(.x, digits)))
+  
+  # Row 2: Population share
+  pop_row <- df1 %>%
+    dplyr::select(region, value = pop_share) %>%
+    tidyr::pivot_wider(names_from = region, values_from = value)
+  for (nm in col_order) if (!nm %in% names(pop_row)) pop_row[[nm]] <- NA_real_
+  pop_row <- pop_row %>%
+    dplyr::relocate(dplyr::all_of(col_order)) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(.x, digits)))
+  
+  # Bind rows and prepend the first column exactly as shown
+  out <- dplyr::bind_rows(pg_row, pop_row)
+  out <- dplyr::bind_cols(
+    tibble::tibble(Country = c("Prosperity Gap share", "Population share")),
+    out
+  )
+  
+  # Flourish-friendly: NA → ""
+  out %>% dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
+}
+
 
