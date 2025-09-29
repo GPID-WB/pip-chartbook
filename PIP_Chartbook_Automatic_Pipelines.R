@@ -13,9 +13,9 @@
 rm(list = ls())
 
 
-# ********************
-# ---- Set up ----
-# ********************
+# *****************************
+# ---- Section #1. Set up ----
+# *****************************
 
 # ---- 1. Load Packages ----
 
@@ -51,6 +51,10 @@ year_end_fig2 <- 2050
 year_start_fig3 <- 2019
 year_end_fig3 <- 2024
 
+# Figure 4
+# *********
+year_start_fig4a <- 1990 
+year_end_fig4a <- 2024
 
 # ---- 3. Load Data     ----
 
@@ -102,11 +106,11 @@ dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbo
 source("PIP_Chartbook_functions.R")
 
 
-# ********************
-# ---- Figures ----
-# ********************
+# *****************************
+# ---- Section #2. Figures ----
+# *****************************
 
-# ---- 1. Figure 1a. Progress in Reducing Poverty ----
+# ---- 1. Figure 1. Progress in Reducing Poverty ----
 
 res <- build_fig1(
   dta_proj = dta_proj,
@@ -123,7 +127,7 @@ dta_fig_1b_final <- res$fig1b
 readr::write_csv(dta_fig_1a_final, "csv/chartbook_fig_1a.csv")
 readr::write_csv(dta_fig_1b_final, "csv/chartbook_fig_1b.csv")
 
-# ---- 3. Figure 2. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
+# ---- 2. Figure 2. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
 
 # 1) Change structure for dta_proj_scen 
 
@@ -168,7 +172,7 @@ write_csv(dta_fig_2a_final, "csv/chartbook_fig_2a.csv")
 write_csv(dta_fig_2b_final, "csv/chartbook_fig_2b.csv")
 
 
-# ---- 4. Figure 3. Poverty is still above pre-pandemic levels ------
+# ---- 3. Figure 3. Poverty is still above pre-pandemic levels ------
 
 # 1) Combine pip data with income group class 
 # Only use income group
@@ -198,4 +202,27 @@ dta_fig_3b_final <- build_fig3(dta_fig_3b, year_start_fig3 = year_start_fig3, ke
 # Export csv file 
 write_csv(dta_fig_3a_final, "csv/chartbook_fig_3a.csv")
 write_csv(dta_fig_3b_final, "csv/chartbook_fig_3b.csv")
+
+
+# ---- 4. Figure 4. Stalled progress in Global Prosperity Gap Reduction ------
+# 4a. Progress in reducing the Global Prosperity Gap
+
+dta_fig_4a <- dta_pip %>%
+  filter(region_name == "World",
+         poverty_line == 3.0) %>%
+  select(year, pg, estimate_type) %>%
+  mutate(estimate_type = case_when(
+    estimate_type == "projection" ~ "actual",
+    estimate_type == "nowcast"    ~ "forecast",
+    TRUE                          ~ estimate_type
+  ))
+
+dta_fig_4a_final <- build_fig4(
+  df = dta_fig_4a,
+  label = "Global Prosperity Gap",
+  digits = 2,
+  keep_last_k = 2
+)
+
+write_csv(dta_fig_4a_final, "csv/chartbook_fig_4a.csv")
 
