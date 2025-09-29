@@ -54,7 +54,7 @@ year_end_fig3 <- 2024
 # Figure 4
 # *********
 year_start_fig4a <- 1990 
-year_end_fig4a <- 2024
+year_fig4b <- 2025 
 
 # ---- 3. Load Data     ----
 
@@ -209,7 +209,8 @@ write_csv(dta_fig_3b_final, "csv/chartbook_fig_3b.csv")
 
 dta_fig_4a <- dta_pip %>%
   filter(region_name == "World",
-         poverty_line == 3.0) %>%
+         poverty_line == 3.0, 
+         year >= year_start_fig4a) %>%
   select(year, pg, estimate_type) %>%
   mutate(estimate_type = case_when(
     estimate_type == "projection" ~ "actual",
@@ -226,3 +227,22 @@ dta_fig_4a_final <- build_fig4(
 
 write_csv(dta_fig_4a_final, "csv/chartbook_fig_4a.csv")
 
+# 4b. Contribution to the Global Prosperity Gap by region 
+
+region_keep <- c("Other High Income Countries", "Sub-Saharan Africa", "South Asia",
+                 "East Asia & Pacific", "Latin America & Caribbean",
+                 "Middle East & North Africa", "Europe & Central Asia")
+
+dta_fig_4b <- dta_pip %>%
+  filter(poverty_line == 3.0, 
+         year >= year_fig4b, 
+         region_name %in% region_keep) %>%
+  select(region_name, pop, pg) %>%
+  mutate(pop_share = round(100*(pop/sum(pop, na.rm = TRUE)),2),
+         pg_weighted = pop * pg, 
+         pg_share = round(100*(pg_weighted / sum(pg_weighted, na.rm = TRUE)),2)) %>%
+  select(region_name, pop_share, pg_share)
+
+# dta_fig_4b has: region_name, pop_share, pg_share (already in percent or proportion)
+dta_fig_4b_final <- build_fig4b_from_shares(dta_fig_4b, digits = 2)
+readr::write_csv(dta_fig_4b_final, "csv/chartbook_fig_4b.csv")
