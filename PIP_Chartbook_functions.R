@@ -344,3 +344,86 @@ build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
   
   out
 }
+
+# ------- Builder for Figure 4 ---------
+
+# Keep only the last k non-NA entries for any column name matching a regex pattern
+.keep_last_k_by_pattern <- function(df, pattern = "\\(forecast\\)", k = 2) {
+  for (col in names(df)) {
+    if (grepl(pattern, col)) {
+      non_na_idx <- which(!is.na(df[[col]]))
+      if (length(non_na_idx) > k) {
+        drop_idx <- head(non_na_idx, length(non_na_idx) - k)
+        df[[col]][drop_idx] <- NA
+      }
+    }
+  }
+  df
+}
+
+build_fig4 <- function(df,
+                       label = "Global Prosperity Gap",
+                       digits = 2,
+                       keep_last_k = 2) {
+  
+  # 1) Normalize estimate_type and aggregate
+  df <- df %>%
+    dplyr::mutate(estimate_type = dplyr::case_when(
+      estimate_type == "projection" ~ "actual",
+      estimate_type == "nowcast"    ~ "forecast",
+      TRUE                          ~ estimate_type
+    )) %>%
+    dplyr::group_by(year, estimate_type) %>%
+    dplyr::summarise(pg = mean(pg, na.rm = TRUE), .groups = "drop")
+  
+  # 2) Wide: year | actual | forecast
+  df_wide <- df %>%
+    tidyr::pivot_wider(names_from = estimate_type, values_from = pg) %>%
+    dplyr::arrange(year)
+  
+  # 3) Make overlapping year match: forecast(year*) = actual(year*)
+  last_actual_year <- max(df_wide$year[!is.na(df_wide$actual)], na.rm = TRUE)
+  if (is.finite(last_actual_year)) {
+    df_wide <- df_wide %>%
+      dplyr::mutate(
+        forecast = dplyr::if_else(year == last_actual_year, actual, forecast)
+      )
+  }
+  
+  # 4) Round
+  df_wide <- df_wide %>%
+    dplyr::mutate(
+      actual   = round(actual,   digits),
+      forecast = round(forecast, digits)
+    )
+  
+  # 5) Keep only the last k forecast values, but always keep the overlap year too
+  if (is.finite(keep_last_k) && keep_last_k > 0) {
+    non_na_idx <- which(!is.na(df_wide$forecast))
+    if (length(non_na_idx) > keep_last_k) {
+      keep_idx <- tail(non_na_idx, keep_last_k)
+      if (is.finite(last_actual_year)) {
+        overlap_idx <- which(df_wide$year == last_actual_year)
+        keep_idx <- sort(unique(c(keep_idx, overlap_idx)))
+      }
+      drop_idx <- setdiff(non_na_idx, keep_idx)
+      df_wide$forecast[drop_idx] <- NA_real_
+    }
+  }
+  
+  # 6) Final labels
+  col_actual   <- label
+  col_forecast <- glue::glue("{label} (forecast)")
+  
+  out <- df_wide %>%
+    dplyr::transmute(
+      year,
+      !!col_actual   := actual,
+      !!col_forecast := forecast
+    ) %>%
+    dplyr::mutate(dplyr::across(-year, ~ ifelse(is.na(.x), "", .x)))
+  
+  out
+}
+
+
