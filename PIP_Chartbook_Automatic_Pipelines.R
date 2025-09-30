@@ -246,3 +246,16 @@ dta_fig_4b <- dta_pip %>%
 # dta_fig_4b has: region_name, pop_share, pg_share (already in percent or proportion)
 dta_fig_4b_final <- build_fig4b_from_shares(dta_fig_4b, digits = 2)
 readr::write_csv(dta_fig_4b_final, "csv/chartbook_fig_4b.csv")
+
+
+# ---- 5. Figure 5. Limited gains in the global prosperity gap ------
+
+dta_fig_5 <- dta_pip_ctry %>%
+  select(country_code, year, mean, gini, pop, pg)
+
+dta_fig_5_final <- build_fig5(dta_fig_5) %>%
+  select(-check_sum)
+
+readr::write_csv(dta_fig_5_final, "csv/chartbook_fig_5.csv")
+
+

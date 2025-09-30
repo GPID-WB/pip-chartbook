@@ -489,3 +489,93 @@ build_fig4b_from_shares <- function(df, digits = 2) {
 }
 
 
+# ------- Builder for Figure 5 ---------
+
+# ---- Figure 5 helper: PG growth decomposition (global) ----
+# Input  : country-year data with cols: country_code, year, mean, gini, pop, pg
+# Output : tibble with the four components + a check column
+# Notes  : Implements the same logic as the Stata code you shared
+
+build_fig5 <- function(dta_fig_5,
+                         z = 25,
+                         keep_years = c(1990, 2000, 2010, 2019, 2024),
+                         last_label_override = "2019–2024 (projected)") {
+  
+  stopifnot(all(c("year","pop","mean","pg") %in% names(dta_fig_5)))
+  
+  suppressPackageStartupMessages({
+    library(dplyr)
+    library(tidyr)
+    library(tibble)
+    library(stringr)
+  })
+  
+  # 1) Country-year inequality term (if not provided in data)
+  df <- dta_fig_5 %>%
+    mutate(i = (pg * mean) / z)
+  
+  # 2) Build within-country inequality aggregator per year
+  #    weight_cty = (pop/mean) / sum(pop/mean)  -> I_g = weight_cty * i
+  #    w_I_year   = sum(I_g)
+  df_wI <- df %>%
+    mutate(w_i = pop / mean) %>%
+    group_by(year) %>%
+    mutate(weight_cty = w_i / sum(w_i, na.rm = TRUE),
+           I_g        = weight_cty * i) %>%
+    summarise(w_I = sum(I_g, na.rm = TRUE), .groups = "drop")
+  
+  # 3) Collapse to global series (pop-weighted pg and mean), join w_I
+  df_year <- df %>%
+    group_by(year) %>%
+    summarise(
+      pg   = weighted.mean(pg,   w = pop, na.rm = TRUE),
+      mean = weighted.mean(mean, w = pop, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    left_join(df_wI, by = "year") %>%
+    mutate(
+      i_total = (pg * mean) / z,     # total inequality implied by identity
+      b_I     = i_total / w_I        # between-country factor so i_total = b_I * w_I
+    ) %>%
+    arrange(year) %>%
+    filter(year %in% keep_years) %>%
+    arrange(year)
+  
+  # 4) Annualized log growth between consecutive kept years
+  grow <- function(x, yrs) 100 * diff(log(x)) / diff(yrs)
+  
+  yrs   <- df_year$year
+  g_pg  <- grow(df_year$pg,     yrs)
+  g_i   <- grow(df_year$i_total,yrs)
+  g_wI  <- grow(df_year$w_I,    yrs)
+  g_mu  <- grow(df_year$mean,   yrs)
+  
+  # Contributions (match Stata’s signs):
+  # gpg = g(PG)
+  # gi  = g(i_total) = gb_I + gw_I
+  # gw_I = g(w_I)
+  # gb_I = gi - gw_I
+  # mean contribution enters with negative sign (higher mean lowers PG)
+  out <- tibble(
+    year = paste(yrs[-length(yrs)], yrs[-1], sep = "\u2013"),
+    `Global Prosperity Gap growth rate`         = g_pg,
+    `Contribution of within-country inequality` = g_wI,
+    `Contribution of between-country inequality`= g_i - g_wI,
+    `Contribution of mean growth`               = -g_mu
+  ) %>%
+    mutate(
+      check_sum = `Global Prosperity Gap growth rate` -
+        (`Contribution of within-country inequality` +
+           `Contribution of between-country inequality` +
+           `Contribution of mean growth`)
+    )
+  
+  # Optional pretty label for the last interval (e.g., projected)
+  last_iv <- paste(2019, 2024, sep = "\u2013")
+  out$year[out$year == last_iv] <- last_label_override
+  
+  # Round to 2 decimals (World Bank table style); keep check_sum unrounded for QC
+  out %>%
+    mutate(across(-c(year, check_sum), ~ round(.x, 2)))
+}
+
