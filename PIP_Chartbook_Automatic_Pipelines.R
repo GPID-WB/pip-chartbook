@@ -29,6 +29,8 @@ library(stringr)
 library(ggplot2)
 library(glue)
 library(rlang)
+library(WDI)
+
 
 
 # ---- 2. Define Various Inputs ----
@@ -100,6 +102,9 @@ dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/ma
 dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2026_2050_20250401_2021_01_02_PROD.dta") %>%
   select(code, year, scenario, povertyline, pop, fgt0)
 
+
+## 5) Inequality Gini data 
+WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
 
 # ---- 4. Function     ----
 
@@ -244,7 +249,7 @@ dta_fig_4b <- dta_pip %>%
   select(region_name, pop_share, pg_share)
 
 # dta_fig_4b has: region_name, pop_share, pg_share (already in percent or proportion)
-dta_fig_4b_final <- build_fig4b_from_shares(dta_fig_4b, digits = 2)
+dta_fig_4b_final <- build_fig4b(dta_fig_4b, digits = 2)
 readr::write_csv(dta_fig_4b_final, "csv/chartbook_fig_4b.csv")
 
 
@@ -258,4 +263,34 @@ dta_fig_5_final <- build_fig5(dta_fig_5) %>%
 
 readr::write_csv(dta_fig_5_final, "csv/chartbook_fig_5.csv")
 
+
+# ---- 6. Figure 6. Limited gains in the global prosperity gap ------
+
+countrycodes_current <- dta_class %>%
+  select(code, economy, region, region_pip, ida_current, region_SSA, 
+         incgroup_current, fcv_current)
+
+dta_fig_6 <- build_fig6(WDI_Gini, countrycodes_current)
+
+dta_fig_6a_final <- dta_fig_6 %>%
+  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
+  filter(name != "FCS", 
+         name != "Non-FCS") %>%
+  rename(Group = name) %>%
+  mutate(Group = gsub(" ","-", Group)) %>%
+  mutate(Group = factor(Group, levels = c(
+    "Low-income",
+    "Lower-middle-income",
+    "Upper-middle-income",
+    "High-income"
+  ))) %>%
+  arrange(Group)
+
+dta_fig_6b_final <- dta_fig_6 %>%
+  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
+  filter(name %in% c("FCS", "Non-FCS")) %>%
+  rename(Group = name) 
+
+readr::write_csv(dta_fig_6a_final, "csv/chartbook_fig_6a.csv")
+readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
 

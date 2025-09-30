@@ -426,29 +426,31 @@ build_fig4 <- function(df,
   out
 }
 
-# --- Recode region names to Chartbook labels (no scaling, just relabel) ---
+# Figure 4b
 .recode_regions_fig4b <- function(df) {
   df %>%
     dplyr::mutate(
-      region = dplyr::recode(region_name,
-                             "East Asia & Pacific"         = "East Asia and Pacific",
-                             "Latin America & Caribbean"   = "Latin America and the Caribbean",
-                             "Middle East & North Africa"  = "Middle East and North Africa",
-                             "Other High Income Countries" = "Rest of the world",
-                             "Europe & Central Asia"       = "Europe and Central Asia",
-                             .default = region_name
+      region = dplyr::recode(
+        region_name,
+        "East Asia & Pacific"         = "East Asia and Pacific",
+        "Latin America & Caribbean"   = "Latin America and the Caribbean",
+        "Middle East & North Africa"  = "Middle East and North Africa",
+        "Other High Income Countries" = "Rest of the world",
+        "Europe & Central Asia"       = "Europe and Central Asia",
+        .default = region_name
       )
     )
 }
 
-# --- Build Fig 4b table from *shares* already computed ---
-# Expects columns: region_name, pop_share, pg_share
-build_fig4b_from_shares <- function(df, digits = 2) {
-  # Recode region labels
+build_fig4b <- function(df, digits = 2) {
   df1 <- .recode_regions_fig4b(df) %>%
-    dplyr::select(region, pop_share, pg_share)
+    dplyr::select(region, pop_share, pg_share) %>%
+    # make sure shares are numeric (remove % if any)
+    dplyr::mutate(
+      pop_share = as.numeric(gsub("%", "", pop_share)),
+      pg_share  = as.numeric(gsub("%", "", pg_share))
+    )
   
-  # Desired column order
   col_order <- c(
     "Sub-Saharan Africa",
     "South Asia",
@@ -459,34 +461,37 @@ build_fig4b_from_shares <- function(df, digits = 2) {
     "Europe and Central Asia"
   )
   
-  # Row 1: Prosperity Gap share
+  # Row 1: Prosperity Gap share (aggregate to unique region)
   pg_row <- df1 %>%
     dplyr::select(region, value = pg_share) %>%
-    tidyr::pivot_wider(names_from = region, values_from = value)
-  for (nm in col_order) if (!nm %in% names(pg_row)) pg_row[[nm]] <- NA_real_
-  pg_row <- pg_row %>%
+    dplyr::group_by(region) %>%
+    dplyr::summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+    tidyr::pivot_wider(names_from = region, values_from = value) %>%
+    # ensure all expected columns exist
+    { for (nm in col_order) if (!nm %in% names(.)) .[[nm]] <- NA_real_; . } %>%
     dplyr::relocate(dplyr::all_of(col_order)) %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(.x, digits)))
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(as.numeric(.x), digits)))
   
-  # Row 2: Population share
+  # Row 2: Population share (aggregate to unique region)
   pop_row <- df1 %>%
     dplyr::select(region, value = pop_share) %>%
-    tidyr::pivot_wider(names_from = region, values_from = value)
-  for (nm in col_order) if (!nm %in% names(pop_row)) pop_row[[nm]] <- NA_real_
-  pop_row <- pop_row %>%
+    dplyr::group_by(region) %>%
+    dplyr::summarise(value = sum(value, na.rm = TRUE), .groups = "drop") %>%
+    tidyr::pivot_wider(names_from = region, values_from = value) %>%
+    { for (nm in col_order) if (!nm %in% names(.)) .[[nm]] <- NA_real_; . } %>%
     dplyr::relocate(dplyr::all_of(col_order)) %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(.x, digits)))
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ round(as.numeric(.x), digits)))
   
-  # Bind rows and prepend the first column exactly as shown
   out <- dplyr::bind_rows(pg_row, pop_row)
   out <- dplyr::bind_cols(
     tibble::tibble(Country = c("Prosperity Gap share", "Population share")),
     out
   )
   
-  # Flourish-friendly: NA → ""
-  out %>% dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
+  out %>%
+    dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
 }
+
 
 
 # ------- Builder for Figure 5 ---------
@@ -578,4 +583,94 @@ build_fig5 <- function(dta_fig_5,
   out %>%
     mutate(across(-c(year, check_sum), ~ round(.x, 2)))
 }
+
+
+# ------- Builder for Figure 6 ---------
+
+# ---- Figure 6: Share of countries by income and FCV group (latest survey)
+
+# Inputs expected:
+# - WDI_Gini: columns country, iso3c, year, SI.POV.GINI, ...
+# - countrycodes_current: columns code, incgroup_current, fcv_current, ...
+build_fig6 <- function(WDI_Gini, countrycodes_current) {
+  
+  # 1) keep latest non-missing Gini by country (proxy for *_latest.dta)
+  latest_gini <- WDI_Gini %>%
+    dplyr::filter(!is.na(SI.POV.GINI)) %>%
+    dplyr::arrange(iso3c, dplyr::desc(year)) %>%
+    dplyr::group_by(iso3c) %>%
+    dplyr::slice(1) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(code = iso3c)                # Stata: ren country_code code
+  
+  # 2) merge 1:1 on code, keep matched only (Stata: keep(3))
+  merged <- latest_gini %>%
+    dplyr::inner_join(
+      countrycodes_current %>%
+        dplyr::select(code, incgroup_current, fcv_current),
+      by = "code"
+    )
+  
+  # 3) inequality groups (ginigroup): 0=Low (<30 or missing), 1=30–40, 2=>40
+  merged <- merged %>%
+    dplyr::mutate(
+      ginigroup = dplyr::case_when(
+        SI.POV.GINI > 40                      ~ 2L,
+        SI.POV.GINI >= 30 & SI.POV.GINI <= 40 ~ 1L,
+        TRUE                                  ~ 0L
+      ),
+      count = 1L
+    )
+  
+  # 4) collapse counts by incgroup_current × ginigroup (Income panel)
+  inc_panel <- merged %>%
+    dplyr::count(incgroup_current, ginigroup, name = "count") %>%
+    dplyr::transmute(name = incgroup_current, group = "Income group FY24",
+                     ginigroup, count)
+  
+  # 5) collapse counts by fcv_current × ginigroup (FCV panel)
+  fcv_panel <- merged %>%
+    dplyr::count(fcv_current, ginigroup, name = "count") %>%
+    dplyr::transmute(name = fcv_current, group = "FCV group FY24",
+                     ginigroup, count)
+  
+  # 6) stack, compute shares within (group,name), reshape wide
+  stacked <- dplyr::bind_rows(fcv_panel, inc_panel) %>%
+    dplyr::group_by(group, name) %>%
+    dplyr::mutate(total = sum(count), share = 100 * count / total) %>%
+    dplyr::ungroup()
+  
+  wide_tbl <- stacked %>%
+    dplyr::select(group, name, ginigroup, share) %>%
+    dplyr::mutate(ginigroup = paste0("share", ginigroup)) %>%
+    tidyr::pivot_wider(names_from = ginigroup, values_from = share, values_fill = 0)
+  
+  # 7) sort order BEFORE renaming Yes/No (replace recode() with factor ordering)
+  sort_levels <- c("Yes", "No",
+                   "Low-income", "Lower-middle-income",
+                   "Upper-middle-income", "High-income")
+  
+  wide_sorted <- wide_tbl %>%
+    dplyr::mutate(
+      sort = as.integer(factor(name, levels = sort_levels)),
+      sort = ifelse(is.na(sort), 999L, sort)
+    ) %>%
+    dplyr::arrange(sort)
+  
+  # 8) rename Yes/No to FCS/Non-FCS (after sorting), select/format columns
+  out <- wide_sorted %>%
+    dplyr::mutate(
+      name = dplyr::if_else(group == "FCV group FY26" & name == "Yes", "FCS", name),
+      name = dplyr::if_else(group == "FCV group FY26" & name == "No",  "Non-FCS", name)
+    ) %>%
+    dplyr::select(group, name,
+                  `Low inequality`      = share0,
+                  `Moderate inequality` = share1,
+                  `High inequality`     = share2) %>%
+    dplyr::mutate(dplyr::across(where(is.numeric), ~round(.x, 2)))
+  
+  out
+}
+
+
 
