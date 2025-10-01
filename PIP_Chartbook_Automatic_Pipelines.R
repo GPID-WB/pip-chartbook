@@ -30,6 +30,8 @@ library(ggplot2)
 library(glue)
 library(rlang)
 library(WDI)
+library(purrr)
+library(forcats)
 
 
 
@@ -58,6 +60,11 @@ year_end_fig3 <- 2024
 year_start_fig4a <- 1990 
 year_fig4b <- 2025 
 
+# Figure 7
+# *********
+year_fig7a <- 1990 
+year_fig7b <- 2024 
+
 # ---- 3. Load Data     ----
 
 ## 1) PIP Complete Data
@@ -82,6 +89,9 @@ dta_pip_ctry <- get_stats(
   nowcast = TRUE
 )
 
+# (PLACEHOLDER) using old data first to set up the structure 
+country_income_distribution <- read_dta("dta/country_income_distribution.dta")
+
 ## 2) Class data
 dta_class <- read_dta("https://raw.githubusercontent.com/GPID-WB/Class/6e6123c1e5f1eea1636dd99f387aa98517d1ac7f/OutputData/CLASS.dta")
 
@@ -105,6 +115,10 @@ dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbo
 
 ## 5) Inequality Gini data 
 WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
+
+
+## 6) pop_reporting level 
+pop_reportinglevel <- read_dta("dta/pop_reportinglevel.dta")
 
 # ---- 4. Function     ----
 
@@ -294,3 +308,41 @@ dta_fig_6b_final <- dta_fig_6 %>%
 readr::write_csv(dta_fig_6a_final, "csv/chartbook_fig_6a.csv")
 readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
 
+
+
+# ---- 7. Figure 7. Income Levels in the world by poverty line ------
+
+
+dta_fig_7 <- build_fig_7(country_income_distribution,
+                         pop_reportinglevel,
+                         countrycodes_current)
+
+# Make dta_fig_7 match the display in Picture 2
+dta_fig_7 <- dta_fig_7 %>%
+  arrange(year, poverty_line) %>%
+  mutate(`poverty line in 2017 PPP US$ (per capita per day)` = round(poverty_line, 1)) %>%
+  select(
+    year,
+    `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`,
+    `poverty line in 2017 PPP US$ (per capita per day)`
+  ) %>%
+  mutate(dplyr::across(
+    c(`Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`),
+    ~{
+      v <- round(.x, 6)
+      out <- sprintf("%.6f", v)
+      out[is.na(v)] <- NA_character_   # keep NAs blank; change to "-" if you prefer
+      out[v == 0]  <- "-"              # replace 0.000000 with "-"
+      out
+    }
+  ))
+
+
+dta_fig_7a_final <- dta_fig_7 %>%
+  filter(year == year_fig7a) 
+
+dta_fig_7b_final <- dta_fig_7 %>%
+  filter(year == year_fig7b) 
+
+readr::write_csv(dta_fig_7a_final, "csv/chartbook_fig_7a.csv")
+readr::write_csv(dta_fig_7b_final, "csv/chartbook_fig_7b.csv")

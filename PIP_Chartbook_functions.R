@@ -673,4 +673,99 @@ build_fig6 <- function(WDI_Gini, countrycodes_current) {
 }
 
 
+# ------- Builder for Figure 7 ---------
+build_fig_7 <- function(country_income_distribution,
+                        pop_reportinglevel,
+                        countrycodes_current) {
+
+  # De-dup classifications to avoid many-to-many
+  cc <- countrycodes_current %>%
+    select(code, region_pip, incgroup_current) %>%
+    arrange(code) %>%
+    distinct(code, .keep_all = TRUE)
+  
+  all_pov <- sort(unique(country_income_distribution$poverty_line))
+  
+  df <- country_income_distribution %>%
+    left_join(pop_reportinglevel,
+              by = c("country_code","reporting_level","year")) %>%
+    rename(code = country_code, pop = pop) %>%
+    left_join(cc, by = "code") %>%
+    # If 1990/2024 missing in your data, this keeps whatever exists among them
+    filter(year %in% intersect(c(1990L, 2024L), unique(year))) %>%
+    group_by(code, year, reporting_level) %>%
+    complete(poverty_line = all_pov) %>%
+    ungroup() %>%
+    # Argentina handling
+    filter(reporting_level == "national" | code == "ARG") %>%
+    filter(!(code == "ARG" & reporting_level == "national")) %>%
+    group_by(code, year, reporting_level) %>%
+    fill(pop, region_pip, incgroup_current, .direction = "downup") %>%
+    ungroup() %>%
+    filter(!is.na(poverty_line)) %>%
+    # Region-weighted imputation for headcount
+    group_by(region_pip, poverty_line, year) %>%
+    mutate(avg_pov = weighted.mean(headcount, population, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(
+      population     = if_else(is.na(population), pop, population),
+      headcount      = if_else(is.na(headcount),  avg_pov, headcount),
+      pop_in_poverty = headcount * population
+    ) %>%
+    arrange(code, year, reporting_level, poverty_line) %>%
+    group_by(code, year, reporting_level) %>%
+    mutate(pop_in_poverty2 = pop_in_poverty - dplyr::lag(pop_in_poverty),
+           pop_in_poverty  = if_else(!is.na(pop_in_poverty2), pop_in_poverty2, pop_in_poverty)) %>%
+    ungroup()
+  
+  # Aggregate to income groups (SPACE labels mapped here)
+  agg <- df %>%
+    mutate(incg = dplyr::recode(incgroup_current,
+                                "Low income"           = 1L,
+                                "Lower middle income"  = 2L,
+                                "Upper middle income"  = 3L,
+                                "High income"          = 4L,
+                                .default = NA_integer_
+    )) %>%
+    filter(!is.na(incg)) %>%
+    group_by(incg, poverty_line, year) %>%
+    summarise(
+      pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE),
+      population     = sum(population,     na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    group_by(poverty_line, year) %>%
+    mutate(global_pop = sum(population, na.rm = TRUE),
+           pop_share_welf = pop_in_poverty / global_pop) %>%
+    ungroup() %>%
+    select(year, poverty_line, incg, pop_share_welf) %>%
+    group_by(year, poverty_line, incg) %>%
+    summarise(pop_share_welf = sum(pop_share_welf), .groups = "drop")
+  
+  # Wide with stable set; then rename to hyphenated display names
+  wide <- tidyr::pivot_wider(
+    agg,
+    names_from  = incg,
+    values_from = pop_share_welf,
+    names_prefix = "pop_share_welf"
+  )
+  
+  for (k in 1:4) {
+    nm <- paste0("pop_share_welf", k)
+    if (!nm %in% names(wide)) wide[[nm]] <- NA_real_
+  }
+  
+  wide %>%
+    rename(
+      `Low-income`             = pop_share_welf1,
+      `Lower-middle-income`    = pop_share_welf2,
+      `Upper-middle-income`    = pop_share_welf3,
+      `High-income`            = pop_share_welf4
+    ) %>%
+    relocate(poverty_line, `Low-income`, `Lower-middle-income`,
+             `Upper-middle-income`, `High-income`, year) %>%
+    arrange(year, poverty_line)
+}
+
+
 
