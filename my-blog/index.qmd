@@ -1,5 +1,5 @@
 ---
-title: "PIP Chartbook"
+title: "PIP Chart Gallery"
 listing:
   contents: posts
   sort: "order"
