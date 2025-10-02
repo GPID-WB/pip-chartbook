@@ -120,7 +120,7 @@ WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
 
 
 ## 6) pop_reporting level 
-pop_reportinglevel <- read_dta("dta/pop_reportinglevel.dta")
+pop_reportinglevel <- read_dta("../dta/pop_reportinglevel.dta")
 
 # ---- 4. Function     ----
 
@@ -145,8 +145,8 @@ res <- build_fig1(
 dta_fig_1a_final <- res$fig1a
 dta_fig_1b_final <- res$fig1b
 
-readr::write_csv(dta_fig_1a_final, "csv/chartbook_fig_1a.csv")
-readr::write_csv(dta_fig_1b_final, "csv/chartbook_fig_1b.csv")
+readr::write_csv(dta_fig_1a_final, "../csv/chartbook_fig_1a.csv")
+readr::write_csv(dta_fig_1b_final, "../csv/chartbook_fig_1b.csv")
 
 # ---- 2. Figure 2. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
 
@@ -189,8 +189,8 @@ dta_fig_2b_final <- build_fig2(
 )
 
 # Export csv file 
-write_csv(dta_fig_2a_final, "csv/chartbook_fig_2a.csv")
-write_csv(dta_fig_2b_final, "csv/chartbook_fig_2b.csv")
+write_csv(dta_fig_2a_final, "../csv/chartbook_fig_2a.csv")
+write_csv(dta_fig_2b_final, "../csv/chartbook_fig_2b.csv")
 
 
 # ---- 3. Figure 3. Poverty is still above pre-pandemic levels ------
@@ -221,8 +221,8 @@ dta_fig_3a_final <- build_fig3(dta_fig_3a, year_start_fig3 = year_start_fig3, ke
 dta_fig_3b_final <- build_fig3(dta_fig_3b, year_start_fig3 = year_start_fig3, keep_last_k = 2)
 
 # Export csv file 
-write_csv(dta_fig_3a_final, "csv/chartbook_fig_3a.csv")
-write_csv(dta_fig_3b_final, "csv/chartbook_fig_3b.csv")
+write_csv(dta_fig_3a_final, "../csv/chartbook_fig_3a.csv")
+write_csv(dta_fig_3b_final, "../csv/chartbook_fig_3b.csv")
 
 
 # ---- 4. Figure 4. Stalled progress in Global Prosperity Gap Reduction ------
@@ -246,7 +246,7 @@ dta_fig_4a_final <- build_fig4(
   keep_last_k = 2
 )
 
-write_csv(dta_fig_4a_final, "csv/chartbook_fig_4a.csv")
+write_csv(dta_fig_4a_final, "../csv/chartbook_fig_4a.csv")
 
 # 4b. Contribution to the Global Prosperity Gap by region 
 
@@ -267,7 +267,7 @@ dta_fig_4b <- dta_pip %>%
 
 # dta_fig_4b has: region_name, pop_share, pg_share (already in percent or proportion)
 dta_fig_4b_final <- build_fig4b(dta_fig_4b, digits = 2)
-readr::write_csv(dta_fig_4b_final, "csv/chartbook_fig_4b.csv")
+readr::write_csv(dta_fig_4b_final, "../csv/chartbook_fig_4b.csv")
 
 
 # ---- 5. Figure 5. Limited gains in the global prosperity gap ------
@@ -278,7 +278,7 @@ dta_fig_5 <- dta_pip_ctry %>%
 dta_fig_5_final <- build_fig5(dta_fig_5) %>%
   select(-check_sum)
 
-readr::write_csv(dta_fig_5_final, "csv/chartbook_fig_5.csv")
+readr::write_csv(dta_fig_5_final, "../csv/chartbook_fig_5.csv")
 
 
 # ---- 6. Figure 6. Limited gains in the global prosperity gap ------
@@ -308,8 +308,8 @@ dta_fig_6b_final <- dta_fig_6 %>%
   filter(name %in% c("FCS", "Non-FCS")) %>%
   rename(Group = name) 
 
-readr::write_csv(dta_fig_6a_final, "csv/chartbook_fig_6a.csv")
-readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
+readr::write_csv(dta_fig_6a_final, "../csv/chartbook_fig_6a.csv")
+readr::write_csv(dta_fig_6b_final, "../csv/chartbook_fig_6b.csv")
 
 
 
@@ -347,5 +347,5 @@ readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
 # dta_fig_7b_final <- dta_fig_7 %>%
 #   filter(year == year_fig7b) 
 # 
-# readr::write_csv(dta_fig_7a_final, "csv/chartbook_fig_7a.csv")
-# readr::write_csv(dta_fig_7b_final, "csv/chartbook_fig_7b.csv")
+# readr::write_csv(dta_fig_7a_final, "../csv/chartbook_fig_7a.csv")
+# readr::write_csv(dta_fig_7b_final, "../csv/chartbook_fig_7b.csv")
