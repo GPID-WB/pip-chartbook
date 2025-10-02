@@ -1,13 +1,15 @@
 
 
-## *****************************************************
-## Title: PIP Chartbook Automatic Update Pipelines   ###
-## Author: Jing Xie, Martha Celmira Viveros Mendoza  ###
-## Latest Updates: Sept 4th, 2025                    ### 
-## *****************************************************
+## ***************************************************
+## Title: PIP Chartbook Automatic Update Pipelines ###
+## Author: Martha Celmira Viveros Mendoza,         ###
+##         Kayley Ashlynn Watson, Jing Xie         ###
+## Latest Updates: Oct 1st, 2025                   ### 
+## ***************************************************
 
-## Objective of this workbook is to create a live csv file that automatically 
-## update data needed for Flourish charts using latest PIP data
+## Objective of this workbook is to create a live 
+## csv file that automatically update data needed 
+## for Flourish charts using latest PIP data
 
 ## Clean Environment
 rm(list = ls())
@@ -89,8 +91,8 @@ dta_pip_ctry <- get_stats(
   nowcast = TRUE
 )
 
-# (PLACEHOLDER) using old data first to set up the structure 
-country_income_distribution <- read_dta("dta/country_income_distribution.dta")
+# Income distribution from $0 to $25 per capita per day 
+
 
 ## 2) Class data
 dta_class <- read_dta("https://raw.githubusercontent.com/GPID-WB/Class/6e6123c1e5f1eea1636dd99f387aa98517d1ac7f/OutputData/CLASS.dta")
@@ -250,7 +252,8 @@ write_csv(dta_fig_4a_final, "csv/chartbook_fig_4a.csv")
 
 region_keep <- c("Other High Income Countries", "Sub-Saharan Africa", "South Asia",
                  "East Asia & Pacific", "Latin America & Caribbean",
-                 "Middle East & North Africa", "Europe & Central Asia")
+                 "Middle East, North Africa, Afghanistan & Pakistan", 
+                 "Europe & Central Asia")
 
 dta_fig_4b <- dta_pip %>%
   filter(poverty_line == 3.0, 
@@ -313,36 +316,36 @@ readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
 # ---- 7. Figure 7. Income Levels in the world by poverty line ------
 
 
-dta_fig_7 <- build_fig_7(country_income_distribution,
-                         pop_reportinglevel,
-                         countrycodes_current)
-
-# Make dta_fig_7 match the display in Picture 2
-dta_fig_7 <- dta_fig_7 %>%
-  arrange(year, poverty_line) %>%
-  mutate(`poverty line in 2017 PPP US$ (per capita per day)` = round(poverty_line, 1)) %>%
-  select(
-    year,
-    `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`,
-    `poverty line in 2017 PPP US$ (per capita per day)`
-  ) %>%
-  mutate(dplyr::across(
-    c(`Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`),
-    ~{
-      v <- round(.x, 6)
-      out <- sprintf("%.6f", v)
-      out[is.na(v)] <- NA_character_   # keep NAs blank; change to "-" if you prefer
-      out[v == 0]  <- "-"              # replace 0.000000 with "-"
-      out
-    }
-  ))
-
-
-dta_fig_7a_final <- dta_fig_7 %>%
-  filter(year == year_fig7a) 
-
-dta_fig_7b_final <- dta_fig_7 %>%
-  filter(year == year_fig7b) 
-
-readr::write_csv(dta_fig_7a_final, "csv/chartbook_fig_7a.csv")
-readr::write_csv(dta_fig_7b_final, "csv/chartbook_fig_7b.csv")
+# dta_fig_7 <- build_fig_7(country_income_distribution,
+#                          pop_reportinglevel,
+#                          countrycodes_current)
+# 
+# # Make dta_fig_7 match the display in Picture 2
+# dta_fig_7 <- dta_fig_7 %>%
+#   arrange(year, poverty_line) %>%
+#   mutate(`poverty line in 2017 PPP US$ (per capita per day)` = round(poverty_line, 1)) %>%
+#   select(
+#     year,
+#     `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`,
+#     `poverty line in 2017 PPP US$ (per capita per day)`
+#   ) %>%
+#   mutate(dplyr::across(
+#     c(`Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`),
+#     ~{
+#       v <- round(.x, 6)
+#       out <- sprintf("%.6f", v)
+#       out[is.na(v)] <- NA_character_   # keep NAs blank; change to "-" if you prefer
+#       out[v == 0]  <- "-"              # replace 0.000000 with "-"
+#       out
+#     }
+#   ))
+# 
+# 
+# dta_fig_7a_final <- dta_fig_7 %>%
+#   filter(year == year_fig7a) 
+# 
+# dta_fig_7b_final <- dta_fig_7 %>%
+#   filter(year == year_fig7b) 
+# 
+# readr::write_csv(dta_fig_7a_final, "csv/chartbook_fig_7a.csv")
+# readr::write_csv(dta_fig_7b_final, "csv/chartbook_fig_7b.csv")
