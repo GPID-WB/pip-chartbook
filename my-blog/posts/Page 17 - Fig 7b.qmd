@@ -1,26 +1,14 @@
 ---
-title: "Figure 7b"
-description: "SUBHEADING/DESCRIPTION"
-order: 100
+title: "Fig.7b - Distribution of the population over income and consumption levels in 2025"
+description: "Income levels in the world have grown between 1990 and 2025, but many people remain vulnerable to falling back into poverty"
+order: 17
 format: html
 image: /images/Fig7b.png
 categories:
-  - ADD
+  - Growth
 ---
 
-SUBHEADING
+<div class="flourish-embed flourish-chart" data-src="visualisation/25441653?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25441653/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
 
-<div class="flourish-embed flourish-chart" data-src="/visualisation/2986083">
-  <script src="https://public.flourish.studio/resources/embed.js"></script>
-  <noscript>
-    <img src="https://public.flourish.studio/visualisation/2986083/thumbnail" width="100%" alt="chart visualization" />
-  </noscript>
-</div>
-
-
-
-<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
-
-Source: World Bank, Poverty and Inequality Platform (version September 2024), https://pip.worldbank.org/. Note: Poverty rates are reported for the $2.15, $3.65, and $6.85 per person per day poverty lines (expressed in 2017 purchasing power parity dollars). Between 2022 and 2029 poverty is projected based on per capita gross domestic product growth projections in Global Economic Prospects, June 2024 (World Bank 2024c) complemented by the Macro Poverty Outlook, Spring Meetings 2024 (World Bank 2024e) and the World Economic Outlook (IMF 2024); for 2030, average annual historic per capita growth rates (2010–19) are used. See annex 1A for more details on the projection methods. In panel a, the black horizontal dotted line is drawn at 3 percent and indicates the World Bank’s target of ending extreme poverty by 2030. In panel b, it is drawn at 256 million, which represents 3 percent of the global population projected for 2030.
-
-</p>
+Source: World Bank, Poverty and Inequality Platform (version September 2025), https://pip.worldbank.org/.
+Note: This figure shows the distribution of the population over income and consumption levels in 1990 and in 2025, cut off at 25 dollars per person per day and expressed in 2021 PPPs. More than 86 percent of the global population lived below the $25 per person per day threshold in 1990 and about 80 percent live under the threshold in 2025.
