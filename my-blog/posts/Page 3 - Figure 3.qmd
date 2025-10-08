@@ -1,0 +1,19 @@
+---
+title: "3 - Poverty rates across world regions"
+description: "The 3 percent goal remains out of reach for decades if current conditions don't change"
+order: 3
+format: html
+image: /images/Fig3.png
+categories:
+  - Poverty
+---
+
+If economic growth continues to be slow and inequality remains unchanged, the 3 percent goal will remain out of reach for decades
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25516134?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25516134/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+
+Note: Poverty rates are reported for the $3.00, $4.20, and $8.30 per person per day poverty lines (expressed in 2021 PPP dollars). Poverty is projected from 2026 to 2030 based on per capita GDP growth projections in June 2025 Global Economic Prospects complemented by the April 2025 Macro Poverty Outlook and the World Economic Outlook. The black horizontal dotted line is drawn at 3 percent and indicates the World Bank’s target of ending extreme poverty by 2030.
+
+</p>

@@ -1,0 +1,16 @@
+---
+title: "6 - Poverty at $3.0 relative to 2019 levels"
+description: "Poverty is still above prepandemic levels in the poorest countries"
+order: 6
+format: html
+image: /images/Fig6.png
+categories:
+  - Poverty
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25070047?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25070047/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+Note: Poverty rates are reported for the $3.00, $4.20, and $8.30 per person per day poverty lines (expressed in 2021 PPP dollars). Poverty is projected from 2026 to 2030 based on per capita GDP growth projections in June 2025 Global Economic Prospects complemented by the April 2025 Macro Poverty Outlook and the World Economic Outlook. The black horizontal line is drawn at 256 million which represents 3% of the global population projected for 2030, the World Bank's target of ending extreme.
+
+</p>

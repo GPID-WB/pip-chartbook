@@ -1,0 +1,16 @@
+---
+title: "16 - Increased concentration of extreme poverty in Sub-Saharan Africa and FCA"
+description: "......"
+order: 16
+format: html
+image: /images/Fig16.png
+categories:
+  - Poverty
+  - FCA
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25517179?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25517179/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+
+Note: Note: FCA = fragile and conflict-affected; GDP = gross domestic product; SSA = Sub-Saharan Africa. The extreme poverty rate is calculated at $3.0 per person per day (expressed in 2021 purchasing power parity dollars). Countries in FCS are defined following the World Bank classification of fragility and conflict-affected situations for each year until 2022, and keeping the definition fixed in 2022 for the years after. Between 2022 and 2029, poverty is projected based on per capita GDP projections in Global Economic Prospects, June 2024 (World Bank 2024c)
+complemented by the Macro Poverty Outlook, Spring Meetings 2024 (World Bank 2024e) and the World Economic Outlook (IMF 2024), and for 2030, average annual historic growth rates (2010–19) are used. Population coverage is below 50 percent for Sub-Saharan Africa after 2019, and for countries in FCS in 2000 and after 2017. 

@@ -1,0 +1,14 @@
+---
+title: "12 - Inequality by income group"
+description: "Poorer economies tend to be more unequal"
+order: 12
+format: html
+image: /images/Fig12.png
+categories:
+  - Inequality
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25403793?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25403793/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+Note: FCS = fragile and conflict-affected situations. High-inequality economies have a Gini index above 40, moderate inequality economies are those with a Gini index between 30 and 40, and low-inequality economies are those with a Gini index below 30. The data cover 166 economies with at least one household survey in the Poverty and Inequality
+Platform between 2000 and 2022. Gini is calculated from the latest survey year. Income group and FCS status are based on World Bank fiscal year 2024 lists.The label values may not add to 100 percent due to rounding.

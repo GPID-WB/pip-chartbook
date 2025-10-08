@@ -1,0 +1,18 @@
+---
+title: "8- Global Prosperity Gap trends"
+description: "Stalled progress in Global Prosperity Gap reduction"
+order: 8
+format: html
+image: /images/Fig8.png
+categories:
+  - Prosperity Gap
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25089264?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25089264/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+
+<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+
+Source: World Bank, Poverty and Inequality Platform (version September 2024), https://pip.worldbank.org/. Note: Poverty rates are reported for the $3.00, $4.20, and $8.30 per person per day poverty lines (expressed in 2021 PPP$). Poverty is projected from 2026 to 2030 based on per capita GDP growth projections in June 2025 Global Economic Prospects complemented by the April 2025 Macro Poverty Outlook and the World Economic Outlook.
+
+</p>

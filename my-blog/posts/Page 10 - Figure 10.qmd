@@ -1,0 +1,17 @@
+---
+title: "10 - Contributions of growht and Inequality to Global Prosperity Gap"
+description: "Limited gains in the Global Gap due to a slowdown of global growth and an increase of global Inequality during the COVID-19 pandemic"
+order: 10
+format: html
+image: /images/Fig10.png
+categories:
+  - Prosperity Gap
+  - Growth
+  - Inequality
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25383815?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25383815/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+<p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+Note: Regional contribution (percent) of the Global Prosperity Gap in 2025, compared with the regional population shares. The label values may not add to 100 percent due to rounding.
+</p>
