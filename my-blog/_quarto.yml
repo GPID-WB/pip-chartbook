@@ -9,8 +9,10 @@ website:
         text: Home
     right:
       - icon: globe
+        text: PIP Home
         href: https://pip.worldbank.org  
       - icon: github
+        text: Source Data
         href: https://github.com/GPID-WB/pip-chartbook.git
   page-footer:
     left: "© 2025 Poverty & Inequality Platform"
