@@ -1,14 +1,12 @@
 ---
 title: "3 - Poverty rates across world regions"
-description: "The 3 percent goal remains out of reach for decades if current conditions don't change"
+description: "Extreme poverty rates are highest in Sub-Saharan Africa, especially in the Eastern & Southern subregion"
 order: 3
 format: html
 image: /images/Fig3.png
 categories:
   - Poverty
 ---
-
-If economic growth continues to be slow and inequality remains unchanged, the 3 percent goal will remain out of reach for decades
 
 <div class="flourish-embed flourish-chart" data-src="visualisation/25516134?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25516134/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
 
