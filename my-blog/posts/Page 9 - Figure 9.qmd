@@ -8,8 +8,15 @@ categories:
   - Prosperity Gap
 ---
 
-<div class="flourish-embed flourish-chart" data-src="visualisation/25383474?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25383474/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+::: {.flourish-embed .flourish-chart data-src="visualisation/25383474?515064"}
+```{=html}
+<script src="https://public.flourish.studio/resources/embed.js"></script>
+```
+<noscript><img src="https://public.flourish.studio/visualisation/25383474/thumbnail" alt="chart visualization" width="100%"/></noscript>
+:::
 
 <p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
+
 Note: The estimates after 2024 are nowcasts.
+
 </p>
