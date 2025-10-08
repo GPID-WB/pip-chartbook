@@ -14,6 +14,6 @@ categories:
 
 <p style="font-size: 0.5em; color: #555; margin-top: 0.5em;">
 
-Source: World Bank, Poverty and Inequality Platform (version September 2024), https://pip.worldbank.org/. Note: Poverty rates are reported for the $2.15, $3.65, and $6.85 per person per day poverty lines (expressed in 2017 purchasing power parity dollars). Between 2022 and 2029 poverty is projected based on per capita gross domestic product growth projections in Global Economic Prospects, June 2024 (World Bank 2024c) complemented by the Macro Poverty Outlook, Spring Meetings 2024 (World Bank 2024e) and the World Economic Outlook (IMF 2024); for 2030, average annual historic per capita growth rates (2010–19) are used. See annex 1A for more details on the projection methods. In panel a, the black horizontal dotted line is drawn at 3 percent and indicates the World Bank’s target of ending extreme poverty by 2030. In panel b, it is drawn at 256 million, which represents 3 percent of the global population projected for 2030.
+Note: Poverty rates are reported for the $3.00, $4.20, and $8.30 per person per day poverty lines (expressed in 2021 PPP dollars). Poverty is projected from 2026 to 2030 based on per capita GDP growth projections in June 2025 Global Economic Prospects complemented by the April 2025 Macro Poverty Outlook and the World Economic Outlook. The black horizontal line is drawn at 256 million which represents 3% of the global population projected for 2030, the World Bank's target of ending extreme.
 
 </p>
