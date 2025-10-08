@@ -1,0 +1,18 @@
+---
+title: "11 - Within country inequality across the world"
+description: "..."
+order: 11
+format: html
+image: /images/Map1.png
+categories:
+  - Inequality
+---
+
+::: {.flourish-embed .flourish-map data-src="visualisation/25516719?515064"}
+```{=html}
+<script src="https://public.flourish.studio/resources/embed.js"></script>
+```
+<noscript><img src="https://public.flourish.studio/visualisation/25516719/thumbnail" alt="map visualization" width="100%"/></noscript>
+:::
+
+Note: The map presents Gini indexes for the latest available survey (after 2000), which measures the inequality of income or consumption, depending on the economy. High-inequality economies have a Gini index above 40, moderate-inequality economies are those with a Gini index between 30 and 40, and low-inequality economies are those with a Gini index below 30.

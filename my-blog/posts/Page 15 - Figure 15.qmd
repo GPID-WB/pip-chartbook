@@ -1,0 +1,14 @@
+---
+title: "15 - Distribution of the population over income and consumption levels in 2025"
+description: "Income levels in the world have grown between 1990 and 2025, but many people remain vulnerable to falling back into poverty"
+order: 15
+format: html
+image: /images/Fig15.png
+categories:
+  - Growth
+---
+
+<div class="flourish-embed flourish-chart" data-src="visualisation/25441653?515064"><script src="https://public.flourish.studio/resources/embed.js"></script><noscript><img src="https://public.flourish.studio/visualisation/25441653/thumbnail" width="100%" alt="chart visualization" /></noscript></div>
+
+Source: World Bank, Poverty and Inequality Platform (version September 2025), https://pip.worldbank.org/.
+Note: This figure shows the distribution of the population over income and consumption levels in 1990 and in 2025, cut off at 25 dollars per person per day and expressed in 2021 PPPs. More than 86 percent of the global population lived below the $25 per person per day threshold in 1990 and about 80 percent live under the threshold in 2025.
