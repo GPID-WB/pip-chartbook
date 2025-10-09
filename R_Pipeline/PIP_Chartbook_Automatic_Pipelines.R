@@ -4,7 +4,7 @@
 ## Title: PIP Chartbook Automatic Update Pipelines ###
 ## Author: Martha Celmira Viveros Mendoza,         ###
 ##         Kayley Ashlynn Watson, Jing Xie         ###
-## Latest Updates: Oct 1st, 2025                   ### 
+## Latest Updates: Oct 9th, 2025                   ### 
 ## ***************************************************
 
 ## Objective of this workbook is to create a live 
@@ -158,7 +158,7 @@ source("R_Pipeline/PIP_Chartbook_functions.R")
 # ---- Section #2. Figures ----
 # *****************************
 
-# ---- 1. Figure 1. Progress in Reducing Poverty ----
+# ---- F1 - Poverty Rate forecasted 2030 ----
 
 res <- build_fig1(
   dta_proj = dta_proj,
@@ -169,13 +169,20 @@ res <- build_fig1(
   millions3pct2030 = millions3pct2030
 )
 
-dta_fig_1a_final <- res$fig1a
-dta_fig_1b_final <- res$fig1b
+dta_fig_1_final <- res$fig1a
 
-readr::write_csv(dta_fig_1a_final, "csv/chartbook_fig_1a.csv")
-readr::write_csv(dta_fig_1b_final, "csv/chartbook_fig_1b.csv")
+write_csv(dta_fig_1_final, "output_csv/chartbook_F1.csv")
 
-# ---- 2. Figure 2. Projections of Poverty until 2050 under different scenarios ($3.00 Line)----
+# ---- F2 - Number of Poor forecasted 2030 ----
+
+dta_fig_2_final <- res$fig1b
+
+write_csv(dta_fig_2_final, "output_csv/chartbook_F2.csv")
+
+# ---- F3 - Poverty rates by region ----
+
+
+# ---- F4 - Projections of poverty until 2050 under different scenarios ($3.0)----
 
 # 1) Change structure for dta_proj_scen 
 
@@ -197,8 +204,8 @@ dta_proj_scen_wide <- dta_proj_scen %>%
          `4% growth` = `4pct growth`,
          )
 
-# Fig 2a (povline 3.0)
-dta_fig_2a_final <- build_fig2(
+# (povline 3.0)
+dta_fig_4_final <- build_fig2(
   povline = 3.0,
   year_start_fig2 = year_start_fig2,
   year_end_fig2   = year_end_fig2,
@@ -206,8 +213,13 @@ dta_fig_2a_final <- build_fig2(
   dta_proj           = dta_proj
 )
 
-# Fig 2b (povline 8.3)
-dta_fig_2b_final <- build_fig2(
+# Export csv file 
+write_csv(dta_fig_4_final, "output_csv/chartbook_F4.csv")
+
+# ---- F5 - Projections of poverty until 2050 under different scenarios ($8.3)----
+
+# (povline 8.3)
+dta_fig_5_final <- build_fig2(
   povline = 8.3,
   year_start_fig2 = year_start_fig2,
   year_end_fig2   = year_end_fig2,
@@ -215,12 +227,11 @@ dta_fig_2b_final <- build_fig2(
   dta_proj           = dta_proj
 )
 
-# Export csv file 
-write_csv(dta_fig_2a_final, "csv/chartbook_fig_2a.csv")
-write_csv(dta_fig_2b_final, "csv/chartbook_fig_2b.csv")
+
+write_csv(dta_fig_5_final, "output_csv/chartbook_F5.csv")
 
 
-# ---- 3. Figure 3. Poverty is still above pre-pandemic levels ------
+# ---- F6 - Poverty is still above pre-pandemic levels ($3.0) ------
 
 # 1) Combine pip data with income group class 
 # Only use income group
@@ -231,31 +242,36 @@ dta_class_inc <- dta_class %>%
          inc_grp = incgroup_current)
 
 # 2) Combine with pip data 
-dta_fig_3 <- left_join(dta_pip_ctry, dta_class_inc, 
+dta_fig_6_7 <- left_join(dta_pip_ctry, dta_class_inc, 
                         by = "country_code") %>%
   select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
   filter(year >= year_start_fig3 &
            year <= year_end_fig3)
 
 # 3) Split different poverty line (only first two)
-dta_fig_3a <- dta_fig_3 %>%
+dta_fig_6 <- dta_fig_6_7 %>%
   filter(poverty_line == 3.0)
 
-dta_fig_3b <- dta_fig_3 %>%
+dta_fig_6_final <- build_fig3(dta_fig_6, year_start_fig3 = year_start_fig3, keep_last_k = 2)
+
+write_csv(dta_fig_6_final, "output_csv/chartbook_F6.csv")
+
+
+# ---- F7 - Poverty is still above pre-pandemic levels ($8.3) ------
+
+dta_fig_7 <- dta_fig_6_7 %>%
   filter(poverty_line == 8.3)
 
-dta_fig_3a_final <- build_fig3(dta_fig_3a, year_start_fig3 = year_start_fig3, keep_last_k = 2)
-dta_fig_3b_final <- build_fig3(dta_fig_3b, year_start_fig3 = year_start_fig3, keep_last_k = 2)
+dta_fig_7_final <- build_fig3(dta_fig_7, year_start_fig3 = year_start_fig3, keep_last_k = 2)
 
 # Export csv file 
-write_csv(dta_fig_3a_final, "csv/chartbook_fig_3a.csv")
-write_csv(dta_fig_3b_final, "csv/chartbook_fig_3b.csv")
+
+write_csv(dta_fig_7_final, "output_csv/chartbook_F7.csv")
 
 
-# ---- 4. Figure 4. Stalled progress in Global Prosperity Gap Reduction ------
-# 4a. Progress in reducing the Global Prosperity Gap
+# ---- F8 - Stalled progress in Global Prosperity Gap Reduction (Global Prosperity Gap) ------
 
-dta_fig_4a <- dta_pip %>%
+dta_fig_8 <- dta_pip %>%
   filter(region_name == "World",
          poverty_line == 3.0, 
          year >= year_start_fig4a) %>%
@@ -266,23 +282,23 @@ dta_fig_4a <- dta_pip %>%
     TRUE                          ~ estimate_type
   ))
 
-dta_fig_4a_final <- build_fig4(
-  df = dta_fig_4a,
+dta_fig_8_final <- build_fig4(
+  df = dta_fig_8,
   label = "Global Prosperity Gap",
   digits = 2,
   keep_last_k = 2
 )
 
-write_csv(dta_fig_4a_final, "csv/chartbook_fig_4a.csv")
+write_csv(dta_fig_8_final, "output_csv/chartbook_F8.csv")
 
-# 4b. Contribution to the Global Prosperity Gap by region 
+# ---- F9 - Stalled progress in Global Prosperity Gap Reduction (Regional Shares) ------
 
 region_keep <- c("Other High Income Countries", "Sub-Saharan Africa", "South Asia",
                  "East Asia & Pacific", "Latin America & Caribbean",
                  "Middle East, North Africa, Afghanistan & Pakistan", 
                  "Europe & Central Asia")
 
-dta_fig_4b <- dta_pip %>%
+dta_fig_9 <- dta_pip %>%
   filter(poverty_line == 3.0, 
          year >= year_fig4b, 
          region_name %in% region_keep) %>%
@@ -292,204 +308,25 @@ dta_fig_4b <- dta_pip %>%
          pg_share = round(100*(pg_weighted / sum(pg_weighted, na.rm = TRUE)),2)) %>%
   select(region_name, pop_share, pg_share)
 
-# dta_fig_4b has: region_name, pop_share, pg_share (already in percent or proportion)
-dta_fig_4b_final <- build_fig4b(dta_fig_4b, digits = 2)
-readr::write_csv(dta_fig_4b_final, "csv/chartbook_fig_4b.csv")
+# dta_fig_9 has: region_name, pop_share, pg_share (already in percent or proportion)
+dta_fig_9_final <- build_fig4b(dta_fig_9, digits = 2)
+write_csv(dta_fig_9_final, "output_csv/chartbook_F9.csv")
 
 
-# ---- 5. Figure 5. Limited gains in the global prosperity gap ------
+# ---- F10 - Limited Gains in the Global Prosperity Gap  ------
 
-dta_fig_5 <- dta_pip_ctry %>%
+dta_fig_10 <- dta_pip_ctry %>%
   select(country_code, year, mean, gini, pop, pg)
 
-dta_fig_5_final <- build_fig5(dta_fig_5) %>%
+dta_fig_10_final <- build_fig5(dta_fig_10) %>%
   select(-check_sum)
 
-readr::write_csv(dta_fig_5_final, "csv/chartbook_fig_5.csv")
+write_csv(dta_fig_10_final, "output_csv/chartbook_F10.csv")
 
 
-# ---- 6. Figure 6. Limited gains in the global prosperity gap ------
+# ---- F11 - Within-country inequality map  ------
 
-countrycodes_current <- dta_class %>%
-  select(code, economy, region, region_pip, ida_current, region_SSA, 
-         incgroup_current, fcv_current)
-
-dta_fig_6 <- build_fig6(WDI_Gini, countrycodes_current)
-
-dta_fig_6a_final <- dta_fig_6 %>%
-  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
-  filter(name != "FCS", 
-         name != "Non-FCS") %>%
-  rename(Group = name) %>%
-  mutate(Group = gsub(" ","-", Group)) %>%
-  mutate(Group = factor(Group, levels = c(
-    "Low-income",
-    "Lower-middle-income",
-    "Upper-middle-income",
-    "High-income"
-  ))) %>%
-  arrange(Group)
-
-dta_fig_6b_final <- dta_fig_6 %>%
-  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
-  filter(name %in% c("FCS", "Non-FCS")) %>%
-  rename(Group = name) 
-
-readr::write_csv(dta_fig_6a_final, "csv/chartbook_fig_6a.csv")
-readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
-
-
-
-# ---- 7. Figure 7. Income Levels in the world by poverty line ------
-
-# Extract world population 
-dta_wld_pop <- dta_pip %>%
-  filter(region_code == "WLD",
-         poverty_line == 3.0) %>%
-  select(year, pop)
-
-dta_fig7 <- dta_inc_dist %>%
-  filter(reporting_level == "national") %>%
-  mutate(pop_in_poverty = headcount * population) %>%
-  left_join(dta_class_inc, by = "country_code") %>%
-  group_by(year, poverty_line, inc_grp) %>%
-  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
-  left_join(dta_wld_pop, by = "year") %>%
-  mutate(pop_in_poverty_share = pop_in_poverty / pop) %>%
-  group_by(year, inc_grp) %>%
-  arrange(poverty_line, .by_group = TRUE) %>%
-  mutate(
-    pop_in_poverty_share_marg = pop_in_poverty_share - lag(pop_in_poverty_share, default = 0)
-  ) %>%
-  ungroup() %>%
-  mutate(inc_grp = recode(inc_grp,
-                          "Low income"          = "Low-income",
-                          "Lower middle income" = "Lower-middle-income",
-                          "Upper middle income" = "Upper-middle-income",
-                          "High income"         = "High-income")) %>%
-  select(year, poverty_line, inc_grp, pop_in_poverty_share_marg) %>%
-  pivot_wider(names_from = inc_grp, values_from = pop_in_poverty_share_marg) %>%
-  select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, poverty_line) %>%
-  rename("poverty line in 2017 PPP US$ (per capita per day)" = poverty_line)
-
-dta_fig7a <- dta_fig7 %>%
-  filter(year == year_fig7a)
-
-dta_fig7b <- dta_fig7 %>%
-  filter(year == year_fig7b)
-
-readr::write_csv(dta_fig7a, "csv/chartbook_fig_7a.csv")
-readr::write_csv(dta_fig7b, "csv/chartbook_fig_7b.csv")
-
-
-# ---- 9. Figure 13. FCS and Extreme Poverty ------
-dta_fcs <- dta_class %>%
-  select(code, year_data, fcv_historical) 
-
-dta_proj_ctry_v2 <- dta_proj_ctry %>%
-  filter(poverty_line == 3.0) %>%
-  rename(country_code = code) %>%
-  select(-poverty_line) 
-
-# Extract world population 
-dta_pop_wld <- dta_pip %>%
-  filter(region_code == "WLD",
-         poverty_line == 3.0) %>%
-  bind_rows(dta_proj) %>%
-  select(region_code, year, pop_in_poverty)
-
-
-# Build figure 13
-dta_fig13 <- dta_pip_ctry %>%
-  filter(poverty_line == 3.0, 
-         year >= year_start_fig13) %>%
-  select(region_code, country_code, year, headcount, pop) %>%
-  left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
-  bind_rows(dta_proj_ctry_v2)
-
-# Extract latest region and fcv definitions for projection years
-latest_region <- get_latest_value(dta_fig13, region_code)
-latest_fcv    <- get_latest_value(dta_fig13, fcv_historical)
-
-# Combine it back to original dataset 
-
-dta_fig13_final <- dta_fig13 %>%
-  left_join(latest_region, by = "country_code") %>%
-  left_join(latest_fcv,    by = "country_code") %>%
-  mutate(
-    region_code = coalesce(region_code, region_code_latest),
-    fcv_historical = coalesce(fcv_historical, fcv_historical_latest)
-  ) %>%
-  select(-ends_with("_latest")) %>%
-  filter(!is.na(fcv_historical) & !is.na(region_code)) %>%
-  mutate(pop_in_poverty = headcount * pop)
-  
-# Calculate share in poverty by group
-dta_fig13_grouped <- dta_fig13_final %>%
-  mutate(group = case_when(
-    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
-    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
-    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
-    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
-  )) %>%
-  group_by(year, group) %>%
-  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
-  ungroup() 
-
-
-dta_fig13_wld <- dta_fig13_final %>%
-  mutate(group = case_when(
-    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
-    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
-    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
-    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
-  )) %>%
-  group_by(year) %>%
-  summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
-  ungroup() 
-
-# Combine World Population
-dta_fig13_final_v2 <- dta_fig13_grouped %>%
-  left_join(dta_fig13_wld, by = "year") %>%
-  mutate(pop_in_poverty_share = 100* (pop_in_poverty / pop_in_poverty_wld)) %>%
-  select(year, group, pop_in_poverty_share) %>%           # change to your dataset name
-  pivot_wider(
-    names_from = group,                   # each group becomes a new column
-    values_from = pop_in_poverty_share    # column values to fill
-  ) %>%
-  arrange(year) %>%
-  mutate(across(-year, ~ round(.x, 1))) %>%     # round to 1 decimal
-  rename(Year = year) %>%
-  select(Year, "Non-FCS in SSA", "FCS in SSA", 
-         "FCS outside SSA", "Rest of the world")
-
-readr::write_csv(dta_fig13_final_v2, "csv/chartbook_fig_13.csv")
-
-# ---- 9. F17 Donut ------
-
-# Extract population 
-dta_pop <- dta_pip_ctry %>%
-  filter(year == year_fig17) %>%
-  select(country_code, pop)
-
-dta_f17 <- dta_class %>%
-  filter(year_data == year_fig17) %>%
-  left_join(dta_pop, by = c("code" = "country_code")) %>%
-  select(economy, incgroup_current, pop, region, code) %>%
-  rename(
-    "Country Name" = economy, 
-    "Income classification 2021" = incgroup_current,
-    "Population 2021" = pop, 
-    "Region" = region, 
-    "Country Code" = code
-  )
-
-readr::write_csv(dta_f17, "csv/chartbook_fig_17.csv")
-
-
-# ---- 11. Map 1. Gini Map------
-
-dta_map1 <- dta_pip_ctry_v2 %>%
+dta_fig_11 <- dta_pip_ctry_v2 %>%
   mutate(gini = gini * 100, 
          Classification = case_when(
            gini > 40              ~ "High inequality",
@@ -532,6 +369,190 @@ dta_map1 <- dta_pip_ctry_v2 %>%
   select(country_code, `Country Name`, country_name_flourish, Region, 
          `Survey year`, `Gini index`, `Welfare type`, Classification) 
 
-readr::write_csv(dta_map1, "csv/chartbook_map1.csv")
+write_csv(dta_fig_11, "output_csv/chartbook_F11.csv")
+
+
+# ---- F12 - Poorer and conflict-affected economies (Income Level) ------
+
+countrycodes_current <- dta_class %>%
+  select(code, economy, region, region_pip, ida_current, region_SSA, 
+         incgroup_current, fcv_current)
+
+dta_fig_12_13 <- build_fig6(WDI_Gini, countrycodes_current)
+
+dta_fig_12_final <- dta_fig_12_13 %>%
+  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
+  filter(name != "Yes", 
+         name != "No") %>%
+  rename(Group = name) %>%
+  mutate(Group = gsub(" ","-", Group)) %>%
+  mutate(Group = factor(Group, levels = c(
+    "Low-income",
+    "Lower-middle-income",
+    "Upper-middle-income",
+    "High-income"
+  ))) %>%
+  arrange(Group)
+
+write_csv(dta_fig_12_final, "output_csv/chartbook_F12.csv")
+
+
+# ---- F13 - Poorer and conflict-affected economies (FCS status) ------
+
+dta_fig_13_final <- dta_fig_12_13 %>%
+  select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
+  filter(name %in% c("Yes", "No")) %>%
+  rename(Group = name) 
+
+write_csv(dta_fig_13_final, "output_csv/chartbook_F13.csv")
+
+
+# ---- F14 - Income levels in the world have grown between 1990 and 2024... ------
+
+# Extract world population 
+dta_wld_pop <- dta_pip %>%
+  filter(region_code == "WLD",
+         poverty_line == 3.0) %>%
+  select(year, pop)
+
+dta_fig_14_15 <- dta_inc_dist %>%
+  filter(reporting_level == "national") %>%
+  mutate(pop_in_poverty = headcount * population) %>%
+  left_join(dta_class_inc, by = "country_code") %>%
+  group_by(year, poverty_line, inc_grp) %>%
+  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  left_join(dta_wld_pop, by = "year") %>%
+  mutate(pop_in_poverty_share = pop_in_poverty / pop) %>%
+  group_by(year, inc_grp) %>%
+  arrange(poverty_line, .by_group = TRUE) %>%
+  mutate(
+    pop_in_poverty_share_marg = pop_in_poverty_share - lag(pop_in_poverty_share, default = 0)
+  ) %>%
+  ungroup() %>%
+  mutate(inc_grp = recode(inc_grp,
+                          "Low income"          = "Low-income",
+                          "Lower middle income" = "Lower-middle-income",
+                          "Upper middle income" = "Upper-middle-income",
+                          "High income"         = "High-income")) %>%
+  select(year, poverty_line, inc_grp, pop_in_poverty_share_marg) %>%
+  pivot_wider(names_from = inc_grp, values_from = pop_in_poverty_share_marg) %>%
+  select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, poverty_line) %>%
+  rename("poverty line in 2017 PPP US$ (per capita per day)" = poverty_line)
+
+dta_fig_14 <- dta_fig_14_15 %>%
+  filter(year == year_fig7a)
+
+write_csv(dta_fig_14, "output_csv/chartbook_F14.csv")
+
+
+# ---- F15 - Income levels in the world have grown 2024 ------
+
+dta_fig_15 <- dta_fig_14_15 %>%
+  filter(year == year_fig7b)
+
+write_csv(dta_fig_15, "output_csv/chartbook_F15.csv")
+
+# ---- F16 - Increased concentratrion of extreme poverty in Sub-Saharan Africa ------
+
+dta_fcs <- dta_class %>%
+  select(code, year_data, fcv_historical) 
+
+dta_proj_ctry_v2 <- dta_proj_ctry %>%
+  filter(poverty_line == 3.0) %>%
+  rename(country_code = code) %>%
+  select(-poverty_line) 
+
+# Extract world population 
+dta_pop_wld <- dta_pip %>%
+  filter(region_code == "WLD",
+         poverty_line == 3.0) %>%
+  bind_rows(dta_proj) %>%
+  select(region_code, year, pop_in_poverty)
+
+dta_fig_16 <- dta_pip_ctry %>%
+  filter(poverty_line == 3.0, 
+         year >= year_start_fig13) %>%
+  select(region_code, country_code, year, headcount, pop) %>%
+  left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
+  bind_rows(dta_proj_ctry_v2)
+
+# Extract latest region and fcv definitions for projection years
+latest_region <- get_latest_value(dta_fig_16, region_code)
+latest_fcv    <- get_latest_value(dta_fig_16, fcv_historical)
+
+# Combine it back to original dataset 
+
+dta_fig_16_final <- dta_fig_16 %>%
+  left_join(latest_region, by = "country_code") %>%
+  left_join(latest_fcv,    by = "country_code") %>%
+  mutate(
+    region_code = coalesce(region_code, region_code_latest),
+    fcv_historical = coalesce(fcv_historical, fcv_historical_latest)
+  ) %>%
+  select(-ends_with("_latest")) %>%
+  filter(!is.na(fcv_historical) & !is.na(region_code)) %>%
+  mutate(pop_in_poverty = headcount * pop)
+  
+# Calculate share in poverty by group
+dta_fig_16_grouped <- dta_fig_16_final %>%
+  mutate(group = case_when(
+    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
+    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
+    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
+    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
+  )) %>%
+  group_by(year, group) %>%
+  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() 
+
+
+dta_fig_16_wld <- dta_fig_16_final %>%
+  mutate(group = case_when(
+    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
+    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
+    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
+    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
+  )) %>%
+  group_by(year) %>%
+  summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() 
+
+# Combine World Population
+dta_fig_16_final_v2 <- dta_fig_16_grouped %>%
+  left_join(dta_fig_16_wld, by = "year") %>%
+  mutate(pop_in_poverty_share = 100* (pop_in_poverty / pop_in_poverty_wld)) %>%
+  select(year, group, pop_in_poverty_share) %>%           # change to your dataset name
+  pivot_wider(
+    names_from = group,                   # each group becomes a new column
+    values_from = pop_in_poverty_share    # column values to fill
+  ) %>%
+  arrange(year) %>%
+  mutate(across(-year, ~ round(.x, 1))) %>%     # round to 1 decimal
+  rename(Year = year) %>%
+  select(Year, "Non-FCS in SSA", "FCS in SSA", 
+         "FCS outside SSA", "Rest of the world")
+
+write_csv(dta_fig_16_final_v2, "output_csv/chartbook_F16.csv")
+
+# ---- F17 - Population Donut ------
+
+# Extract population 
+dta_pop <- dta_pip_ctry %>%
+  filter(year == year_fig17) %>%
+  select(country_code, pop)
+
+dta_fig_17 <- dta_class %>%
+  filter(year_data == year_fig17) %>%
+  left_join(dta_pop, by = c("code" = "country_code")) %>%
+  select(economy, incgroup_current, pop, region, code) %>%
+  rename(
+    "Country Name" = economy, 
+    "Income classification 2021" = incgroup_current,
+    "Population 2021" = pop, 
+    "Region" = region, 
+    "Country Code" = code
+  )
+
+write_csv(dta_fig_17, "output_csv/chartbook_F17.csv")
 
 
