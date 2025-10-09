@@ -67,6 +67,14 @@ year_fig4b <- 2025
 year_fig7a <- 1990 
 year_fig7b <- 2024 
 
+# Figure 13
+# *********
+year_start_fig13 <- 2000
+
+# Figure 17 
+# *********
+year_fig17 <- 2021
+
 # ---- 3. Load Data     ----
 
 ## 1) PIP Complete Data
@@ -121,6 +129,13 @@ dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/ma
          poverty_severity = poverty_severity/100,
          pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
 
+dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_2026_2030_20250401_2021_01_02_PROD.dta") %>%
+  rename(poverty_line = povertyline,
+         pop_in_poverty = poorpop, 
+         headcount = fgt0, 
+         poverty_gap = fgt1, 
+         poverty_severity = fgt2) %>%
+  select(code, year, poverty_line, pop, headcount)
 
 ## 4) 2026 - 2050 Scenario Projection 
 dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2026_2050_20250401_2021_01_02_PROD.dta") %>%
@@ -129,6 +144,10 @@ dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbo
 
 ## 5) Inequality Gini data 
 WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
+
+
+## 6) Income distribution data 
+dta_inc_dist <- read_dta("dta/country_income_distribution.dta")
 
 # ---- 4. Function     ----
 
@@ -322,44 +341,153 @@ readr::write_csv(dta_fig_6b_final, "csv/chartbook_fig_6b.csv")
 
 
 # ---- 7. Figure 7. Income Levels in the world by poverty line ------
-# 
-# 
-# dta_fig_7 <- build_fig_7(country_income_distribution,
-#                          pop_reportinglevel,
-#                          countrycodes_current)
-# 
-# # Make dta_fig_7 match the display in Picture 2
-# dta_fig_7 <- dta_fig_7 %>%
-#   arrange(year, poverty_line) %>%
-#   mutate(`poverty line in 2017 PPP US$ (per capita per day)` = round(poverty_line, 1)) %>%
-#   select(
-#     year,
-#     `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`,
-#     `poverty line in 2017 PPP US$ (per capita per day)`
-#   ) %>%
-#   mutate(dplyr::across(
-#     c(`Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`),
-#     ~{
-#       v <- round(.x, 6)
-#       out <- sprintf("%.6f", v)
-#       out[is.na(v)] <- NA_character_   # keep NAs blank; change to "-" if you prefer
-#       out[v == 0]  <- "-"              # replace 0.000000 with "-"
-#       out
-#     }
-#   ))
-# 
-# 
-# dta_fig_7a_final <- dta_fig_7 %>%
-#   filter(year == year_fig7a)
-# 
-# dta_fig_7b_final <- dta_fig_7 %>%
-#   filter(year == year_fig7b)
-# 
-# readr::write_csv(dta_fig_7a_final, "csv/chartbook_fig_7a.csv")
-# readr::write_csv(dta_fig_7b_final, "csv/chartbook_fig_7b.csv")
+
+# Extract world population 
+dta_wld_pop <- dta_pip %>%
+  filter(region_code == "WLD",
+         poverty_line == 3.0) %>%
+  select(year, pop)
+
+dta_fig7 <- dta_inc_dist %>%
+  filter(reporting_level == "national") %>%
+  mutate(pop_in_poverty = headcount * population) %>%
+  left_join(dta_class_inc, by = "country_code") %>%
+  group_by(year, poverty_line, inc_grp) %>%
+  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  left_join(dta_wld_pop, by = "year") %>%
+  mutate(pop_in_poverty_share = pop_in_poverty / pop) %>%
+  group_by(year, inc_grp) %>%
+  arrange(poverty_line, .by_group = TRUE) %>%
+  mutate(
+    pop_in_poverty_share_marg = pop_in_poverty_share - lag(pop_in_poverty_share, default = 0)
+  ) %>%
+  ungroup() %>%
+  mutate(inc_grp = recode(inc_grp,
+                          "Low income"          = "Low-income",
+                          "Lower middle income" = "Lower-middle-income",
+                          "Upper middle income" = "Upper-middle-income",
+                          "High income"         = "High-income")) %>%
+  select(year, poverty_line, inc_grp, pop_in_poverty_share_marg) %>%
+  pivot_wider(names_from = inc_grp, values_from = pop_in_poverty_share_marg) %>%
+  select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, poverty_line) %>%
+  rename("poverty line in 2017 PPP US$ (per capita per day)" = poverty_line)
+
+dta_fig7a <- dta_fig7 %>%
+  filter(year == year_fig7a)
+
+dta_fig7b <- dta_fig7 %>%
+  filter(year == year_fig7b)
+
+readr::write_csv(dta_fig7a, "csv/chartbook_fig_7a.csv")
+readr::write_csv(dta_fig7b, "csv/chartbook_fig_7b.csv")
 
 
-# ---- 8. Map 1. Gini Map------
+# ---- 9. Figure 13. FCS and Extreme Poverty ------
+dta_fcs <- dta_class %>%
+  select(code, year_data, fcv_historical) 
+
+dta_proj_ctry_v2 <- dta_proj_ctry %>%
+  filter(poverty_line == 3.0) %>%
+  rename(country_code = code) %>%
+  select(-poverty_line) 
+
+# Extract world population 
+dta_pop_wld <- dta_pip %>%
+  filter(region_code == "WLD",
+         poverty_line == 3.0) %>%
+  bind_rows(dta_proj) %>%
+  select(region_code, year, pop_in_poverty)
+
+
+# Build figure 13
+dta_fig13 <- dta_pip_ctry %>%
+  filter(poverty_line == 3.0, 
+         year >= year_start_fig13) %>%
+  select(region_code, country_code, year, headcount, pop) %>%
+  left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
+  bind_rows(dta_proj_ctry_v2)
+
+# Extract latest region and fcv definitions for projection years
+latest_region <- get_latest_value(dta_fig13, region_code)
+latest_fcv    <- get_latest_value(dta_fig13, fcv_historical)
+
+# Combine it back to original dataset 
+
+dta_fig13_final <- dta_fig13 %>%
+  left_join(latest_region, by = "country_code") %>%
+  left_join(latest_fcv,    by = "country_code") %>%
+  mutate(
+    region_code = coalesce(region_code, region_code_latest),
+    fcv_historical = coalesce(fcv_historical, fcv_historical_latest)
+  ) %>%
+  select(-ends_with("_latest")) %>%
+  filter(!is.na(fcv_historical) & !is.na(region_code)) %>%
+  mutate(pop_in_poverty = headcount * pop)
+  
+# Calculate share in poverty by group
+dta_fig13_grouped <- dta_fig13_final %>%
+  mutate(group = case_when(
+    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
+    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
+    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
+    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
+  )) %>%
+  group_by(year, group) %>%
+  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() 
+
+
+dta_fig13_wld <- dta_fig13_final %>%
+  mutate(group = case_when(
+    region_code == "SSF" & fcv_historical == "Yes"  ~ "FCS in SSA",
+    region_code == "SSF" & fcv_historical == "No"   ~ "Non-FCS in SSA",
+    region_code != "SSF" & fcv_historical == "Yes"  ~ "FCS outside SSA",
+    region_code != "SSF" & fcv_historical == "No"   ~ "Rest of the world"
+  )) %>%
+  group_by(year) %>%
+  summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+  ungroup() 
+
+# Combine World Population
+dta_fig13_final_v2 <- dta_fig13_grouped %>%
+  left_join(dta_fig13_wld, by = "year") %>%
+  mutate(pop_in_poverty_share = 100* (pop_in_poverty / pop_in_poverty_wld)) %>%
+  select(year, group, pop_in_poverty_share) %>%           # change to your dataset name
+  pivot_wider(
+    names_from = group,                   # each group becomes a new column
+    values_from = pop_in_poverty_share    # column values to fill
+  ) %>%
+  arrange(year) %>%
+  mutate(across(-year, ~ round(.x, 1))) %>%     # round to 1 decimal
+  rename(Year = year) %>%
+  select(Year, "Non-FCS in SSA", "FCS in SSA", 
+         "FCS outside SSA", "Rest of the world")
+
+readr::write_csv(dta_fig13_final_v2, "csv/chartbook_fig_13.csv")
+
+# ---- 9. F17 Donut ------
+
+# Extract population 
+dta_pop <- dta_pip_ctry %>%
+  filter(year == year_fig17) %>%
+  select(country_code, pop)
+
+dta_f17 <- dta_class %>%
+  filter(year_data == year_fig17) %>%
+  left_join(dta_pop, by = c("code" = "country_code")) %>%
+  select(economy, incgroup_current, pop, region, code) %>%
+  rename(
+    "Country Name" = economy, 
+    "Income classification 2021" = incgroup_current,
+    "Population 2021" = pop, 
+    "Region" = region, 
+    "Country Code" = code
+  )
+
+readr::write_csv(dta_f17, "csv/chartbook_fig_17.csv")
+
+
+# ---- 11. Map 1. Gini Map------
 
 dta_map1 <- dta_pip_ctry_v2 %>%
   mutate(gini = gini * 100, 
