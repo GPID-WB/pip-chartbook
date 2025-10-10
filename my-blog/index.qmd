@@ -1,9 +1,0 @@
----
-title: "PIP Chart Gallery"
-listing:
-  contents: posts
-  sort: "order"
-  type: grid
-  categories: true
-  filter-ui: true
----
