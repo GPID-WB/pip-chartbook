@@ -270,6 +270,145 @@ build_fig2 <- function(povline,
   out
 }
 
+# ------- Builder for F3 ---------
+
+# ---- Fig 3 builder ----
+build_fig3_table <- function(dta_fig_3,
+                             min_year   = 1990,
+                             fill_year  = 2024) {
+  
+  # target regions and their long names (for columns)
+  regions_code <- c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")
+  regions_name <- c(
+    "Eastern and Southern Africa",
+    "Western and Central Africa",
+    "East Asia & Pacific",
+    "Europe & Central Asia",
+    "Latin America & Caribbean",
+    "Middle East, North Africa, Afghanistan & Pakistan",
+    "North America",
+    "South Asia",
+    "Sub-Saharan Africa",
+    "World"
+  )
+  
+  # 1. filter, transform, and standardize estimate_type
+  d_long <- dta_fig_3 %>%
+    filter(region_code %in% regions_code, year >= min_year) %>%
+    mutate(
+      hc = headcount * 100,
+      estimate_type = case_when(
+        estimate_type == "actual" ~ "obs",
+        estimate_type %in% c("projection","nowcast") ~ "proj",
+        TRUE ~ estimate_type
+      ),
+      year = as.character(year)
+    ) %>%
+    select(poverty_line, year, region_name, estimate_type, hc)
+  
+  # 2. reshape wide: Region_obs, Region_proj
+  d_wide <- d_long %>%
+    pivot_wider(
+      names_from  = c(region_name, estimate_type),
+      values_from = hc,
+      names_glue  = "{region_name}_{estimate_type}"
+    ) %>%
+    arrange(poverty_line, as.numeric(year))
+  
+  # 3. connect dotted lines at fill_year by copying obs -> proj when proj missing
+  for (r in regions_name) {
+    proj <- paste0(r, "_proj"); obs <- paste0(r, "_obs")
+    if (!proj %in% names(d_wide)) d_wide[[proj]] <- NA_real_
+    if (!obs  %in% names(d_wide)) d_wide[[obs]]  <- NA_real_
+    d_wide[[proj]] <- ifelse(d_wide$year == as.character(fill_year) & is.na(d_wide[[proj]]),
+                             d_wide[[obs]], d_wide[[proj]])
+  }
+  
+  # 4. auto smooth: if proj exists at year t, fill proj at year t-1 with obs(t-1)
+  d_wide$year <- as.integer(d_wide$year)
+  d_wide <- d_wide[order(d_wide$poverty_line, d_wide$year), ]
+  proj_cols <- grep("_proj$", names(d_wide), value = TRUE)
+  grp_idx   <- split(seq_len(nrow(d_wide)), d_wide$poverty_line)
+  
+  for (col in proj_cols) {
+    obs_col <- sub("_proj$", "_obs", col)
+    if (!obs_col %in% names(d_wide)) next
+    for (rows in grp_idx) {
+      yr   <- d_wide$year[rows]
+      proj <- d_wide[rows, col][[1]]
+      obs  <- d_wide[rows, obs_col][[1]]
+      next_has_proj <- c(!is.na(proj[-1]) & yr[-1] == yr[-length(yr)] + 1, FALSE)
+      fill_here     <- is.na(proj) & next_has_proj
+      if (any(fill_here)) d_wide[rows[fill_here], col] <- obs[fill_here]
+    }
+  }
+  
+  # 5. reorder and rename headers to match your Excel Flourish layout
+  new_col_order <- c(
+    "poverty_line","year",
+    "World_obs","World_proj",
+    "East Asia & Pacific_obs","East Asia & Pacific_proj",
+    "Europe & Central Asia_obs","Europe & Central Asia_proj",
+    "Latin America & Caribbean_obs","Latin America & Caribbean_proj",
+    "Middle East, North Africa, Afghanistan & Pakistan_obs",
+    "Middle East, North Africa, Afghanistan & Pakistan_proj",
+    "North America_obs","North America_proj",
+    "South Asia_obs","South Asia_proj",
+    "Sub-Saharan Africa_obs","Sub-Saharan Africa_proj",
+    "Eastern and Southern Africa_obs","Eastern and Southern Africa_proj",
+    "Western and Central Africa_obs","Western and Central Africa_proj"
+  )
+  
+  nice_names <- c(
+    "Poverty line","Year",
+    "World (Observed)","World",
+    "East Asia & Pacific (Observed)","East Asia & Pacific",
+    "Europe & Central Asia (Observed)","Europe & Central Asia",
+    "Latin America & Caribbean (Observed)","Latin America & Caribbean",
+    "Middle East, North Africa, Afghanistan & Pakistan (Observed)",
+    "Middle East, North Africa, Afghanistan & Pakistan",
+    "North America (Observed)","North America",
+    "South Asia (Observed)","South Asia",
+    "Sub-Saharan Africa (Observed)","Sub-Saharan Africa",
+    "Eastern & Southern Africa (Observed)","Eastern & Southern Africa",
+    "Western & Central Africa (Observed)","Western & Central Africa"
+  )
+  
+  # ensure all columns exist before selecting
+  for (nm in new_col_order) if (!nm %in% names(d_wide)) d_wide[[nm]] <- NA_real_
+  
+  d_out <- d_wide %>%
+    select(any_of(new_col_order))
+  
+  names(d_out) <- nice_names
+  
+  # 6. format poverty line labels
+  d_out <- d_out %>%
+    mutate(
+      `Poverty line` = case_when(
+        round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
+        round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
+        round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
+        TRUE ~ as.character(`Poverty line`)
+      ),
+      Year = as.character(Year)
+    )
+  
+  d_out
+}
+
+# ---- Main wrapper you can call from your pipeline ----
+build_and_export_fig3 <- function(dta_fig_3, xlsx_path = NULL, ...) {
+  out <- build_fig3_table(dta_fig_3, ...)
+  if (!is.null(xlsx_path)) {
+    # write to Excel if a path is provided
+    if (!requireNamespace("writexl", quietly = TRUE)) {
+      stop("Please install writexl to export: install.packages('writexl')")
+    }
+    writexl::write_xlsx(list(Flourish = out), path = xlsx_path)
+  }
+  out
+}
 
 
 # ------- Builder for Figure 3 ---------
