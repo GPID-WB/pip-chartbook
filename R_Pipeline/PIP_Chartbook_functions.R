@@ -644,7 +644,7 @@ build_fig4 <- function(df,
         "East Asia & Pacific"         = "East Asia and Pacific",
         "Latin America & Caribbean"   = "Latin America and the Caribbean",
         "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
-        "Other High Income Countries" = "Rest of the world",
+        "North America" = "North America",
         "Europe & Central Asia"       = "Europe and Central Asia",
         .default = region_name
       )
@@ -666,7 +666,7 @@ build_fig4b <- function(df, digits = 2) {
     "East Asia and Pacific",
     "Latin America and the Caribbean",
     "Middle East, North Africa, Afghanistan and Pakistan",
-    "Rest of the world",
+    "North America",
     "Europe and Central Asia"
   )
   
