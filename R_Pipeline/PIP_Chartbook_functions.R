@@ -827,3 +827,12 @@ get_latest_value <- function(df, var) {
     select(country_code, !!new_col := !!var)
 }
 
+# ------- Numeric transformation ---------
+
+# helper to coerce numeric-like text (e.g., "1,234.56", "12.3%") to numeric
+clean_to_numeric <- function(x) {
+  x <- gsub(",", "", x)
+  x <- sub("%$", "", x)
+  suppressWarnings(as.numeric(x))
+}
+
