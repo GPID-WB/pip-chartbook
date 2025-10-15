@@ -413,77 +413,44 @@ build_and_export_fig3 <- function(dta_fig_3, xlsx_path = NULL, ...) {
 
 # ------- Builder for Figure 3 ---------
 
-# Main: build the Fig 3 table
-build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
-  
-  # 1) Aggregate to weighted headcount by year / inc_grp / estimate_type
-  out <- data %>%
-    group_by(year, inc_grp, estimate_type) %>%
+# 2) Helper to compute 2019-based index (same logic as yours)
+summarize_series <- function(df, projection = FALSE) {
+  out <- df %>%
+    group_by(inc_grp, year) %>%
     summarise(
-      weighted_value = weighted.mean(headcount, pop, na.rm = TRUE),
+      headcount_group = weighted.mean(headcount, pop, na.rm = TRUE),
       .groups = "drop"
     ) %>%
-    # Standardize group labels to match desired output
+    group_by(inc_grp) %>%
+    mutate(
+      headcount_ref  = headcount_group[year == 2019],
+      headcount_diff = headcount_group / headcount_ref
+    ) %>%
+    # Standardize group labels
     mutate(
       inc_grp = recode(inc_grp,
-                       "Low income" = "Low-income",
+                       "Low income"          = "Low-income",
                        "Lower middle income" = "Lower-middle-income",
                        "Upper middle income" = "Upper-middle-income",
-                       "High income" = "High-income"),
-      variable = paste(inc_grp, estimate_type, sep = " - ")
-    ) %>%
-    select(year, variable, weighted_value) %>%
-    pivot_wider(names_from = variable, values_from = weighted_value)
-  
-  # 2) Ensure columns exist even if missing after pivot (avoid mutate errors)
-  needed <- c(
-    "Low-income - actual", "Low-income - projection", "Low-income - nowcast",
-    "Lower-middle-income - actual", "Lower-middle-income - nowcast",
-    "Upper-middle-income - actual", "Upper-middle-income - nowcast"
-  )
-  for (nm in needed) if (!nm %in% names(out)) out[[nm]] <- NA_real_
-  
-  # 3) Merge actual / projection / nowcast as in your pipeline
-  # Low-income: prefer actual, then projection, then nowcast
-  out <- out %>%
-    mutate(
-      `Low-income` = if_else(!is.na(`Low-income - actual`), `Low-income - actual`, `Low-income - projection`),
-      `Low-income` = if_else(!is.na(`Low-income`), `Low-income`, `Low-income - nowcast`)
-    ) %>%
-    # For middle-income groups, ensure () (nowcast) exists; if missing, backfill from actual
-    mutate(
-      `Lower-middle-income - nowcast` = if_else(!is.na(`Lower-middle-income - nowcast`), `Lower-middle-income - nowcast`, `Lower-middle-income - actual`),
-      `Upper-middle-income - nowcast` = if_else(!is.na(`Upper-middle-income - nowcast`), `Upper-middle-income - nowcast`, `Upper-middle-income - actual`)
-    ) %>%
-    # Keep, then rename to final columns
-    select(
-      year,
-      `Low-income`,
-      `Lower-middle-income - actual`, `Lower-middle-income - nowcast`,
-      `Upper-middle-income - actual`, `Upper-middle-income - nowcast`
-    ) %>%
-    rename(
-      `Lower-middle-income`   = `Lower-middle-income - actual`,
-      `Lower-middle-income ()`= `Lower-middle-income - nowcast`,
-      `Upper-middle-income`   = `Upper-middle-income - actual`,
-      `Upper-middle-income ()`= `Upper-middle-income - nowcast`
+                       "High income"         = "High-income"
+      )
     )
   
-  # 4) Relative to base year, rounded to 2 decimals
-  out <- out %>%
-    mutate(across(-year, ~ .x / .x[year == year_start_fig3])) %>%
-    mutate(across(-year, ~ round(.x, 2)))
+  if (projection) {
+    # Add suffix only for the three groups; keep Low-income as-is (per your note)
+    out <- out %>%
+      mutate(
+        inc_grp = if_else(
+          inc_grp %in% c("Lower-middle-income", "Upper-middle-income", "High-income"),
+          paste0(inc_grp, " (projection)"),
+          inc_grp
+        )
+      )
+  }
   
-  # 5) Keep only the last 'keep_last_k' non-NA values in each () column
-  out <- .keep_last_k_paren(out, k = keep_last_k)
-  
-  # 6) Replace NA with "" for visual clarity
-  out <- out %>%
-    mutate(across(-year, ~ ifelse(is.na(.x), "", .x)))
-  
-  out
+  out %>%
+    select(year, inc_grp, headcount_diff)
 }
-
 
 
 build_fig3_from_dataset <- function(df,
