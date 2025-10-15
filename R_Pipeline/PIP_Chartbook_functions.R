@@ -656,7 +656,7 @@ build_fig5 <- function(dta_fig_5,
 
 # Inputs expected:
 # - WDI_Gini: columns country, iso3c, year, SI.POV.GINI, ...
-# - countrycodes_current: columns code, incgroup_current, fcv_current, ...
+# - countrycodes_current: columns code, incgroup_current, fcv, ...
 build_fig6 <- function(WDI_Gini, countrycodes_current) {
   
   # 1) keep latest non-missing Gini by country (proxy for *_latest.dta)
@@ -672,7 +672,7 @@ build_fig6 <- function(WDI_Gini, countrycodes_current) {
   merged <- latest_gini %>%
     dplyr::inner_join(
       countrycodes_current %>%
-        dplyr::select(code, incgroup_current, fcv_current),
+        dplyr::select(code, incgroup_current, fcv),
       by = "code"
     )
   
@@ -693,10 +693,10 @@ build_fig6 <- function(WDI_Gini, countrycodes_current) {
     dplyr::transmute(name = incgroup_current, group = "Income group FY24",
                      ginigroup, count)
   
-  # 5) collapse counts by fcv_current × ginigroup (FCV panel)
+  # 5) collapse counts by fcv × ginigroup (FCV panel)
   fcv_panel <- merged %>%
-    dplyr::count(fcv_current, ginigroup, name = "count") %>%
-    dplyr::transmute(name = fcv_current, group = "FCV group FY24",
+    dplyr::count(fcv, ginigroup, name = "count") %>%
+    dplyr::transmute(name = fcv, group = "FCV group FY24",
                      ginigroup, count)
   
   # 6) stack, compute shares within (group,name), reshape wide
