@@ -420,7 +420,7 @@ build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
   out <- data %>%
     group_by(year, inc_grp, estimate_type) %>%
     summarise(
-      weighted_value = sum(headcount * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
+      weighted_value = weighted.mean(headcount, pop, na.rm = TRUE),
       .groups = "drop"
     ) %>%
     # Standardize group labels to match desired output
@@ -482,6 +482,76 @@ build_fig3 <- function(data, year_start_fig3, keep_last_k = 2) {
     mutate(across(-year, ~ ifelse(is.na(.x), "", .x)))
   
   out
+}
+
+
+
+build_fig3_from_dataset <- function(df,
+                                    poverty_lines = c(2.15, 6.85),
+                                    base_year = 2019) {
+  library(dplyr)
+  library(tidyr)
+  library(stringr)
+  # helper to standardize income group names similar to Stata labels
+  std_inc <- function(x) dplyr::recode(x,
+                                       "Low income"          = "Low-income",
+                                       "Lower middle income" = "Lower-middle-income",
+                                       "Upper middle income" = "Upper-middle-income",
+                                       "High income"         = "High-income",
+                                       .default = x
+  )
+  # inner worker: replicate Stata for one poverty line
+  one_line <- function(dd, pl) {
+    dd %>%
+      filter(year > 2018,
+             # handle both 2.15 or 0.0215 representations safely
+             abs(poverty_line - pl) < 1e-6 | abs(poverty_line - pl/100) < 1e-9) %>%
+      mutate(inc_grp = std_inc(inc_grp)) %>%
+      group_by(inc_grp, year) %>%
+      summarise(weighted_value = weighted.mean(headcount, pop, na.rm = TRUE),
+                .groups = "drop") %>%
+      group_by(inc_grp) %>%
+      mutate(headcount_growth = headcount / headcount[year == base_year]) %>%
+      ungroup() %>%
+      select(year, inc_grp, headcount_growth) %>%
+      pivot_wider(names_from = inc_grp,
+                  values_from = headcount_growth,
+                  names_prefix = "headcount_growth_") %>%
+      { # create _forecast cols (year > 2021) and blank main for year > 2022
+        main_cols <- setdiff(names(.), "year")
+        fc_cols <- paste0(main_cols, "_forecast")
+        for (i in seq_along(main_cols)) {
+          .[[fc_cols[i]]] <- ifelse(.$year > 2021, .[[main_cols[i]]], NA_real_)
+          .[[main_cols[i]]] <- ifelse(.$year > 2022, NA_real_, .[[main_cols[i]]])
+        }
+        .
+      } %>%
+      { # force Low-income dotted: move all Low-income to forecast, blank main
+        li_main <- grep("^headcount_growth_Low-income$", names(.), value = TRUE)
+        if (length(li_main) == 1) {
+          li_fc <- paste0(li_main, "_forecast")
+          .[[li_fc]] <- ifelse(is.na(.[[li_fc]]), .[[li_main]], .[[li_fc]])
+          .[[li_main]] <- NA_real_
+        }
+        .
+      } %>%
+      { # order like Stata: LIC, LMC, UMC, HIC, then forecasts
+        ord_main <- c("year",
+                      "headcount_growth_Low-income",
+                      "headcount_growth_Lower-middle-income",
+                      "headcount_growth_Upper-middle-income",
+                      "headcount_growth_High-income")
+        ord_fc <- paste0(setdiff(ord_main, "year"), "_forecast")
+        ord <- c(ord_main, ord_fc)
+        keep <- intersect(ord, names(.))
+        select(., all_of(keep))
+      } %>%
+      mutate(poverty_line = pl, .before = 1)
+  }
+  # run for all lines; return a named list like Stata’s separate sheets
+  out_list <- lapply(poverty_lines, function(pl) one_line(df, pl))
+  names(out_list) <- paste0("fig3_", poverty_lines)
+  out_list
 }
 
 # ------- Builder for Figure 4 ---------
@@ -574,7 +644,7 @@ build_fig4 <- function(df,
         "East Asia & Pacific"         = "East Asia and Pacific",
         "Latin America & Caribbean"   = "Latin America and the Caribbean",
         "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
-        "Other High Income Countries" = "Rest of the world",
+        "North America" = "North America",
         "Europe & Central Asia"       = "Europe and Central Asia",
         .default = region_name
       )
@@ -596,7 +666,7 @@ build_fig4b <- function(df, digits = 2) {
     "East Asia and Pacific",
     "Latin America and the Caribbean",
     "Middle East, North Africa, Afghanistan and Pakistan",
-    "Rest of the world",
+    "North America",
     "Europe and Central Asia"
   )
   
@@ -825,5 +895,14 @@ get_latest_value <- function(df, var) {
     slice_max(order_by = year, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
     select(country_code, !!new_col := !!var)
+}
+
+# ------- Numeric transformation ---------
+
+# helper to coerce numeric-like text (e.g., "1,234.56", "12.3%") to numeric
+clean_to_numeric <- function(x) {
+  x <- gsub(",", "", x)
+  x <- sub("%$", "", x)
+  suppressWarnings(as.numeric(x))
 }
 
