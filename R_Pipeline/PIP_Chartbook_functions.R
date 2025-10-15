@@ -568,8 +568,8 @@ build_fig4b <- function(df, digits = 2) {
 
 build_fig5 <- function(dta_fig_5,
                          z = 25,
-                         keep_years = c(1990, 2000, 2010, 2019, 2024),
-                         last_label_override = "2019–2024 (projected)") {
+                         keep_years = c(1990, 2000, 2010, 2019, 2025),
+                         last_label_override = "2019–2025 (projected)") {
   
   stopifnot(all(c("year","pop","mean","pg") %in% names(dta_fig_5)))
   
@@ -641,7 +641,7 @@ build_fig5 <- function(dta_fig_5,
     )
   
   # Optional pretty label for the last interval (e.g., projected)
-  last_iv <- paste(2019, 2024, sep = "\u2013")
+  last_iv <- paste(2019, 2025, sep = "\u2013")
   out$year[out$year == last_iv] <- last_label_override
   
   # Round to 2 decimals (World Bank table style); keep check_sum unrounded for QC
