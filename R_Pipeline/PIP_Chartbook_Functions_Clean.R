@@ -694,21 +694,6 @@ build_fig9 <- function(df, digits = 2) {
     dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
 }
 
-# .recode_regions_fig9 <- function(df) {
-#   df %>%
-#     dplyr::mutate(
-#       region = dplyr::recode(
-#         region_name,
-#         "East Asia & Pacific"         = "East Asia and Pacific",
-#         "Latin America & Caribbean"   = "Latin America and the Caribbean",
-#         "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
-#         "North America" = "North America",
-#         "Europe & Central Asia"       = "Europe and Central Asia",
-#         .default = region_name
-#       )
-#     )
-# }
-
 # Builder for Figure 10
 
 # Input  : country-year data with cols: country_code, year, mean, gini, pop, pg
@@ -1016,4 +1001,109 @@ build_fig14_15 <- function(dta_inc_dist, dta_class_inc, target_year) {
 
 
 # Builder for Figure 16
+
+build_fig16 <- function(dta_class,
+                        dta_proj_ctry,
+                        dta_pip,
+                        dta_proj,
+                        dta_pip_ctry,
+                        year_start_fig16) {
+  
+  # deps
+  require(dplyr)
+  require(tidyr)
+  require(rlang)
+  
+  # ---- Helper: latest non-missing value per country (by year desc)
+  get_latest_value <- function(df, var) {
+    var <- enquo(var)
+    df %>%
+      arrange(country_code, desc(year)) %>%
+      group_by(country_code) %>%
+      summarise(!!paste0(as_name(var), "_latest") := dplyr::first(na.omit(!!var)),
+                .groups = "drop")
+  }
+  
+  # dta_fcs
+  dta_fcs <- dta_class %>%
+    select(code, year_data, fcv)
+  
+  # dta_proj_ctry_v2
+  dta_proj_ctry_v2 <- dta_proj_ctry %>%
+    filter(poverty_line == 3.0) %>%
+    rename(country_code = code) %>%
+    select(-poverty_line)
+  
+  # Extract world population (kept exactly as in your script)
+  dta_pop_wld <- dta_pip %>%
+    filter(region_code == "WLD",
+           poverty_line == 3.0) %>%
+    bind_rows(dta_proj) %>%
+    select(region_code, year, pop_in_poverty)
+  
+  # Base: country-level, $3.00, from start year; join FCS; append projections
+  dta_fig_16 <- dta_pip_ctry %>%
+    filter(poverty_line == 3.0,
+           year >= year_start_fig16) %>%
+    select(region_code, country_code, year, headcount, pop) %>%
+    left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
+    bind_rows(dta_proj_ctry_v2)
+  
+  # Latest region and fcv definitions for projection years
+  latest_region <- get_latest_value(dta_fig_16, region_code)
+  latest_fcv    <- get_latest_value(dta_fig_16, fcv)
+  
+  # Combine it back to original dataset
+  dta_fig_16_final <- dta_fig_16 %>%
+    left_join(latest_region, by = "country_code") %>%
+    left_join(latest_fcv,    by = "country_code") %>%
+    mutate(
+      region_code = coalesce(region_code, region_code_latest),
+      fcv         = coalesce(fcv, fcv_latest)
+    ) %>%
+    select(-ends_with("_latest")) %>%
+    filter(!is.na(fcv) & !is.na(region_code)) %>%
+    mutate(pop_in_poverty = headcount * pop)
+  
+  # Calculate share in poverty by group
+  dta_fig_16_grouped <- dta_fig_16_final %>%
+    mutate(group = case_when(
+      region_code == "SSF" & fcv == "Yes" ~ "FCS in SSA",
+      region_code == "SSF" & fcv == "No"  ~ "Non-FCS in SSA",
+      region_code != "SSF" & fcv == "Yes" ~ "FCS outside SSA",
+      region_code != "SSF" & fcv == "No"  ~ "Rest of the world"
+    )) %>%
+    group_by(year, group) %>%
+    summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+    ungroup()
+  
+  dta_fig_16_wld <- dta_fig_16_final %>%
+    mutate(group = case_when(
+      region_code == "SSF" & fcv == "Yes" ~ "FCS in SSA",
+      region_code == "SSF" & fcv == "No"  ~ "Non-FCS in SSA",
+      region_code != "SSF" & fcv == "Yes" ~ "FCS outside SSA",
+      region_code != "SSF" & fcv == "No"  ~ "Rest of the world"
+    )) %>%
+    group_by(year) %>%
+    summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+    ungroup()
+  
+  # Combine World Population -> shares -> wide -> order and rounding
+  dta_fig_16_final_v2 <- dta_fig_16_grouped %>%
+    left_join(dta_fig_16_wld, by = "year") %>%
+    mutate(pop_in_poverty_share = 100 * (pop_in_poverty / pop_in_poverty_wld)) %>%
+    select(year, group, pop_in_poverty_share) %>%
+    pivot_wider(
+      names_from  = group,
+      values_from = pop_in_poverty_share
+    ) %>%
+    arrange(year) %>%
+    mutate(across(-year, ~ round(.x, 1))) %>%
+    rename(Year = year) %>%
+    select(Year, "Non-FCS in SSA", "FCS in SSA",
+           "FCS outside SSA", "Rest of the world")
+  
+  # Return only the final table (exact output)
+  return(dta_fig_16_final_v2)
+}
 
