@@ -480,83 +480,93 @@ write_csv(dta_fig_15_final_v2, "csv/chartbook_F15.csv")
 
 # ---- F16 - Increased concentration of extreme poverty in Sub-Saharan Africa ------
 
-dta_fcs <- dta_class %>%
-  select(code, year_data, fcv) 
+# dta_fcs <- dta_class %>%
+#   select(code, year_data, fcv) 
+# 
+# dta_proj_ctry_v2 <- dta_proj_ctry %>%
+#   filter(poverty_line == 3.0) %>%
+#   rename(country_code = code) %>%
+#   select(-poverty_line) 
+# 
+# # Extract world population
+# dta_pop_wld <- dta_pip %>%
+#   filter(region_code == "WLD",
+#          poverty_line == 3.0) %>%
+#   bind_rows(dta_proj) %>%
+#   select(region_code, year, pop_in_poverty)
+# 
+# dta_fig_16 <- dta_pip_ctry %>%
+#   filter(poverty_line == 3.0,
+#          year >= year_start_fig16) %>%
+#   select(region_code, country_code, year, headcount, pop) %>%
+#   left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
+#   bind_rows(dta_proj_ctry_v2)
+# 
+# # Extract latest region and fcv definitions for projection years
+# latest_region <- get_latest_value(dta_fig_16, region_code)
+# latest_fcv    <- get_latest_value(dta_fig_16, fcv)
+# 
+# # Combine it back to original dataset
+# 
+# dta_fig_16_final <- dta_fig_16 %>%
+#   left_join(latest_region, by = "country_code") %>%
+#   left_join(latest_fcv,    by = "country_code") %>%
+#   mutate(
+#     region_code = coalesce(region_code, region_code_latest),
+#     fcv = coalesce(fcv, fcv_latest)
+#   ) %>%
+#   select(-ends_with("_latest")) %>%
+#   filter(!is.na(fcv) & !is.na(region_code)) %>%
+#   mutate(pop_in_poverty = headcount * pop)
+# 
+# # Calculate share in poverty by group
+# dta_fig_16_grouped <- dta_fig_16_final %>%
+#   mutate(group = case_when(
+#     region_code == "SSF" & fcv == "Yes"  ~ "FCS in SSA",
+#     region_code == "SSF" & fcv == "No"   ~ "Non-FCS in SSA",
+#     region_code != "SSF" & fcv == "Yes"  ~ "FCS outside SSA",
+#     region_code != "SSF" & fcv == "No"   ~ "Rest of the world"
+#   )) %>%
+#   group_by(year, group) %>%
+#   summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+#   ungroup()
+# 
+# 
+# dta_fig_16_wld <- dta_fig_16_final %>%
+#   mutate(group = case_when(
+#     region_code == "SSF" & fcv == "Yes"  ~ "FCS in SSA",
+#     region_code == "SSF" & fcv == "No"   ~ "Non-FCS in SSA",
+#     region_code != "SSF" & fcv == "Yes"  ~ "FCS outside SSA",
+#     region_code != "SSF" & fcv == "No"   ~ "Rest of the world"
+#   )) %>%
+#   group_by(year) %>%
+#   summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
+#   ungroup()
+# 
+# # Combine World Population
+# dta_fig_16_final_v2 <- dta_fig_16_grouped %>%
+#   left_join(dta_fig_16_wld, by = "year") %>%
+#   mutate(pop_in_poverty_share = 100* (pop_in_poverty / pop_in_poverty_wld)) %>%
+#   select(year, group, pop_in_poverty_share) %>%           # change to your dataset name
+#   pivot_wider(
+#     names_from = group,                   # each group becomes a new column
+#     values_from = pop_in_poverty_share    # column values to fill
+#   ) %>%
+#   arrange(year) %>%
+#   mutate(across(-year, ~ round(.x, 1))) %>%     # round to 1 decimal
+#   rename(Year = year) %>%
+#   select(Year, "Non-FCS in SSA", "FCS in SSA",
+#          "FCS outside SSA", "Rest of the world")
 
-dta_proj_ctry_v2 <- dta_proj_ctry %>%
-  filter(poverty_line == 3.0) %>%
-  rename(country_code = code) %>%
-  select(-poverty_line) 
+dta_fig_16_final_v2 <- build_fig16(
+  dta_class       = dta_class,
+  dta_proj_ctry   = dta_proj_ctry,
+  dta_pip         = dta_pip,
+  dta_proj        = dta_proj,
+  dta_pip_ctry    = dta_pip_ctry,
+  year_start_fig16 = year_start_fig16
+)
 
-# Extract world population 
-dta_pop_wld <- dta_pip %>%
-  filter(region_code == "WLD",
-         poverty_line == 3.0) %>%
-  bind_rows(dta_proj) %>%
-  select(region_code, year, pop_in_poverty)
-
-dta_fig_16 <- dta_pip_ctry %>%
-  filter(poverty_line == 3.0, 
-         year >= year_start_fig16) %>%
-  select(region_code, country_code, year, headcount, pop) %>%
-  left_join(dta_fcs, by = c("country_code" = "code", "year" = "year_data")) %>%
-  bind_rows(dta_proj_ctry_v2)
-
-# Extract latest region and fcv definitions for projection years
-latest_region <- get_latest_value(dta_fig_16, region_code)
-latest_fcv    <- get_latest_value(dta_fig_16, fcv)
-
-# Combine it back to original dataset 
-
-dta_fig_16_final <- dta_fig_16 %>%
-  left_join(latest_region, by = "country_code") %>%
-  left_join(latest_fcv,    by = "country_code") %>%
-  mutate(
-    region_code = coalesce(region_code, region_code_latest),
-    fcv = coalesce(fcv, fcv_latest)
-  ) %>%
-  select(-ends_with("_latest")) %>%
-  filter(!is.na(fcv) & !is.na(region_code)) %>%
-  mutate(pop_in_poverty = headcount * pop)
-  
-# Calculate share in poverty by group
-dta_fig_16_grouped <- dta_fig_16_final %>%
-  mutate(group = case_when(
-    region_code == "SSF" & fcv == "Yes"  ~ "FCS in SSA",
-    region_code == "SSF" & fcv == "No"   ~ "Non-FCS in SSA",
-    region_code != "SSF" & fcv == "Yes"  ~ "FCS outside SSA",
-    region_code != "SSF" & fcv == "No"   ~ "Rest of the world"
-  )) %>%
-  group_by(year, group) %>%
-  summarise(pop_in_poverty = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
-  ungroup() 
-
-
-dta_fig_16_wld <- dta_fig_16_final %>%
-  mutate(group = case_when(
-    region_code == "SSF" & fcv == "Yes"  ~ "FCS in SSA",
-    region_code == "SSF" & fcv == "No"   ~ "Non-FCS in SSA",
-    region_code != "SSF" & fcv == "Yes"  ~ "FCS outside SSA",
-    region_code != "SSF" & fcv == "No"   ~ "Rest of the world"
-  )) %>%
-  group_by(year) %>%
-  summarise(pop_in_poverty_wld = sum(pop_in_poverty, na.rm = TRUE), .groups = "drop") %>%
-  ungroup() 
-
-# Combine World Population
-dta_fig_16_final_v2 <- dta_fig_16_grouped %>%
-  left_join(dta_fig_16_wld, by = "year") %>%
-  mutate(pop_in_poverty_share = 100* (pop_in_poverty / pop_in_poverty_wld)) %>%
-  select(year, group, pop_in_poverty_share) %>%           # change to your dataset name
-  pivot_wider(
-    names_from = group,                   # each group becomes a new column
-    values_from = pop_in_poverty_share    # column values to fill
-  ) %>%
-  arrange(year) %>%
-  mutate(across(-year, ~ round(.x, 1))) %>%     # round to 1 decimal
-  rename(Year = year) %>%
-  select(Year, "Non-FCS in SSA", "FCS in SSA", 
-         "FCS outside SSA", "Rest of the world")
 
 write_csv(dta_fig_16_final_v2, "csv/chartbook_F16.csv")
 

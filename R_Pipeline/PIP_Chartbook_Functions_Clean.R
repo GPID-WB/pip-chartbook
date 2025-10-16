@@ -634,7 +634,18 @@ build_fig8 <- function(df,
 # Builder for Figure 9
 
 build_fig9 <- function(df, digits = 2) {
-  df1 <- .recode_regions_fig9(df) %>%
+  df1 <- df %>%
+    dplyr::mutate(
+      region = dplyr::recode(
+        region_name,
+        "East Asia & Pacific"         = "East Asia and Pacific",
+        "Latin America & Caribbean"   = "Latin America and the Caribbean",
+        "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
+        "North America" = "North America",
+        "Europe & Central Asia"       = "Europe and Central Asia",
+        .default = region_name
+      )
+    )%>%
     dplyr::select(region, pop_share, pg_share) %>%
     # make sure shares are numeric (remove % if any)
     dplyr::mutate(
@@ -683,20 +694,20 @@ build_fig9 <- function(df, digits = 2) {
     dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
 }
 
-.recode_regions_fig9 <- function(df) {
-  df %>%
-    dplyr::mutate(
-      region = dplyr::recode(
-        region_name,
-        "East Asia & Pacific"         = "East Asia and Pacific",
-        "Latin America & Caribbean"   = "Latin America and the Caribbean",
-        "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
-        "North America" = "North America",
-        "Europe & Central Asia"       = "Europe and Central Asia",
-        .default = region_name
-      )
-    )
-}
+# .recode_regions_fig9 <- function(df) {
+#   df %>%
+#     dplyr::mutate(
+#       region = dplyr::recode(
+#         region_name,
+#         "East Asia & Pacific"         = "East Asia and Pacific",
+#         "Latin America & Caribbean"   = "Latin America and the Caribbean",
+#         "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
+#         "North America" = "North America",
+#         "Europe & Central Asia"       = "Europe and Central Asia",
+#         .default = region_name
+#       )
+#     )
+# }
 
 # Builder for Figure 10
 
@@ -1004,4 +1015,5 @@ build_fig14_15 <- function(dta_inc_dist, dta_class_inc, target_year) {
 }
 
 
+# Builder for Figure 16
 
