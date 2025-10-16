@@ -1,4 +1,13 @@
 
+## ***************************************************
+## Title: PIP Chartbook Automatic Update Pipelines ###
+##        (Helper)                                 ###
+## Author: Martha Celmira Viveros Mendoza,         ###
+##         Kayley Ashlynn Watson, Jing Xie,        ###
+##         Christoph Lakner, Nishant Yonzan        ###
+## Latest Updates: Oct 16th, 2025                  ### 
+## ***************************************************
+
 # ------- Section #1. General Functions ---------
 
 # identify the last actual year from wide table 
