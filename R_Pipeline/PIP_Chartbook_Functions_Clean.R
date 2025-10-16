@@ -1,5 +1,7 @@
 
-# ------- identify the last actual year from wide table ---------
+# ------- Section #1. General Functions ---------
+
+# identify the last actual year from wide table 
 
 .last_actual_year <- function(df_wide) {
   actual_cols <- names(df_wide) %>% stringr::str_subset("^(headcount|pop_in_poverty)_actual_pl_")
@@ -11,7 +13,7 @@
     dplyr::pull(max_year)
 }
 
-# ------- Copy actual → nowcast for ONLY the last actual year (all pov lines) ---------
+# Copy actual → nowcast for ONLY the last actual year (all pov lines)
 
 .copy_last_actual_into_nowcast <- function(df_wide, pov_lines_fmt) {
   last_year <- .last_actual_year(df_wide)
@@ -36,7 +38,7 @@
 }
 
 
-# ------- Safe weighted mean ---------
+# Safe weighted mean 
 
 wavg <- function(x, w) {
   den <- sum(w, na.rm = TRUE)
@@ -58,7 +60,7 @@ wavg <- function(x, w) {
   df
 }
 
-# ------- Extend historical growth ---------
+# Extend historical growth
 
 extend_with_hist_growth <- function(df, end_year) {
   df <- df %>% arrange(year)
@@ -93,7 +95,7 @@ extend_with_hist_growth <- function(df, end_year) {
 }
 
 
-# ------- Fill Last Observed Year ---------
+# Fill Last Observed Year 
 
 fill_last_observed_year <- function(df, observed_col, year_col = "year", digits = 2) {
   last_year <- max(df[[year_col]][!is.na(df[[observed_col]])], na.rm = TRUE)
@@ -109,8 +111,47 @@ fill_last_observed_year <- function(df, observed_col, year_col = "year", digits 
     ))
 }
 
+# Get latest value 
 
-# ------- Builder for Figure 1 ---------
+get_latest_value <- function(df, var) {
+  var <- rlang::ensym(var)
+  var_name <- rlang::as_name(var)
+  new_col  <- paste0(var_name, "_latest")
+  
+  df %>%
+    filter(!is.na(!!var)) %>%
+    group_by(country_code) %>%
+    slice_max(order_by = year, n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    select(country_code, !!new_col := !!var)
+}
+
+# Numeric transformation
+
+# helper to coerce numeric-like text (e.g., "1,234.56", "12.3%") to numeric
+clean_to_numeric <- function(x) {
+  x <- gsub(",", "", x)
+  x <- sub("%$", "", x)
+  suppressWarnings(as.numeric(x))
+}
+
+# Keep only the last k non-NA entries for any column name matching a regex pattern
+.keep_last_k_by_pattern <- function(df, pattern = "\\(forecast\\)", k = 2) {
+  for (col in names(df)) {
+    if (grepl(pattern, col)) {
+      non_na_idx <- which(!is.na(df[[col]]))
+      if (length(non_na_idx) > k) {
+        drop_idx <- head(non_na_idx, length(non_na_idx) - k)
+        df[[col]][drop_idx] <- NA
+      }
+    }
+  }
+  df
+}
+
+# ------- Section #2. Figure-Specific Helpers ---------
+
+# Builder for Figure 1
 
 # Inputs:
 #   dta_proj, dta_pip: long frames with region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type
@@ -205,10 +246,170 @@ build_fig1 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, 
   list(fig1a = fig1a, fig1b = fig1b)
 }
 
+# Builder for Figure 3
 
-# ------- Builder for Figure 2 ---------
+build_fig3 <- function(dta_fig_3,
+                       year_start_fig1 = 1990,
+                       bridge_year = 2024,
+                       regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD"),
+                       regions_name = c(
+                         "Eastern and Southern Africa",
+                         "Western and Central Africa",
+                         "East Asia & Pacific",
+                         "Europe & Central Asia",
+                         "Latin America & Caribbean",
+                         "Middle East, North Africa, Afghanistan & Pakistan",
+                         "North America",
+                         "South Asia",
+                         "Sub-Saharan Africa",
+                         "World"
+                       )) {
+  
+  # deps
+  require(dplyr)
+  require(tidyr)
+  require(stringr)
+  # small helper (safe numeric)
+  clean_to_numeric <- function(x) suppressWarnings(readr::parse_number(as.character(x)))
+  
+  # ---- STEP 1. Filter, recode, prepare
+  dta_long <- dta_fig_3 %>%
+    dplyr::filter(region_code %in% regions, year >= year_start_fig1) %>%
+    dplyr::mutate(
+      hc = headcount * 100,
+      estimate_type = dplyr::case_when(
+        estimate_type == "actual" ~ "obs",
+        estimate_type %in% c("projection", "nowcast") ~ "proj",
+        TRUE ~ estimate_type
+      ),
+      year = as.character(year)
+    ) %>%
+    dplyr::select(poverty_line, year, region_name, estimate_type, hc)
+  
+  # ---- STEP 2. Wide reshape: Region x estimate_type
+  dta_wide <- dta_long %>%
+    tidyr::pivot_wider(
+      names_from  = c(region_name, estimate_type),
+      values_from = hc,
+      names_glue  = "{region_name}_{estimate_type}"
+    ) %>%
+    dplyr::arrange(poverty_line, as.numeric(year))
+  
+  # ---- STEP 3. Bridge missing projections in a specific year
+  for (r in regions_name) {
+    proj <- paste0(r, "_proj"); obs <- paste0(r, "_obs")
+    if (proj %in% names(dta_wide) && obs %in% names(dta_wide)) {
+      dta_wide[[proj]] <- ifelse(dta_wide$year == as.character(bridge_year) &
+                                   is.na(dta_wide[[proj]]),
+                                 dta_wide[[obs]], dta_wide[[proj]])
+    }
+  }
+  
+  # ---- STEP 4. Smooth transitions around projection blocks
+  dta_wide$year <- as.integer(dta_wide$year)
+  dta_wide <- dplyr::arrange(dta_wide, poverty_line, year)
+  
+  proj_cols <- grep("_proj$", names(dta_wide), value = TRUE)
+  grp_idx   <- split(seq_len(nrow(dta_wide)), dta_wide$poverty_line)
+  
+  for (col in proj_cols) {
+    obs_col <- sub("_proj$", "_obs", col)
+    if (!obs_col %in% names(dta_wide)) next
+    
+    for (rows in grp_idx) {
+      yr   <- dta_wide$year[rows]
+      proj <- dta_wide[rows, col][[1]]
+      obs  <- dta_wide[rows, obs_col][[1]]
+      
+      proj_idx <- which(!is.na(proj))
+      if (length(proj_idx) == 0L) next
+      
+      cut_points  <- c(1L, which(diff(proj_idx) > 1L) + 1L)
+      block_start <- proj_idx[cut_points]
+      block_end   <- proj_idx[c(cut_points[-1] - 1L, length(proj_idx))]
+      
+      for (b in seq_along(block_start)) {
+        s <- block_start[b]; e <- block_end[b]
+        if (s > 1L) {
+          before_idx <- s - 1L
+          if (!is.na(obs[before_idx])) proj[before_idx] <- obs[before_idx]
+        }
+        if (e < length(proj)) {
+          after_idx <- e + 1L
+          if (!is.na(obs[after_idx])) proj[after_idx] <- obs[after_idx]
+        }
+      }
+      
+      next_has_proj <- c(!is.na(proj[-1]) & yr[-1] == yr[-length(yr)] + 1L, FALSE)
+      fill_here <- is.na(proj) & next_has_proj
+      if (any(fill_here)) proj[fill_here] <- obs[fill_here]
+      
+      dta_wide[rows, col] <- proj
+    }
+  }
+  
+  # ---- STEP 5. Column order + display names
+  new_col_order <- c(
+    "poverty_line","year",
+    "World_obs","World_proj",
+    "East Asia & Pacific_obs","East Asia & Pacific_proj",
+    "Europe & Central Asia_obs","Europe & Central Asia_proj",
+    "Latin America & Caribbean_obs","Latin America & Caribbean_proj",
+    "Middle East, North Africa, Afghanistan & Pakistan_obs",
+    "Middle East, North Africa, Afghanistan & Pakistan_proj",
+    "North America_obs","North America_proj",
+    "South Asia_obs","South Asia_proj",
+    "Sub-Saharan Africa_obs","Sub-Saharan Africa_proj",
+    "Eastern and Southern Africa_obs","Eastern and Southern Africa_proj",
+    "Western and Central Africa_obs","Western and Central Africa_proj"
+  )
+  
+  # silently keep only those that exist (some projects may miss some regions)
+  keep_cols <- intersect(new_col_order, names(dta_wide))
+  dta_wide  <- dplyr::select(dta_wide, dplyr::any_of(keep_cols))
+  
+  new_names <- c(
+    "Poverty line",
+    "Year",
+    "World","World (Projection)",
+    "East Asia & Pacific","East Asia & Pacific (Projection)",
+    "Europe & Central Asia","Europe & Central Asia (Projection)",
+    "Latin America & Caribbean","Latin America & Caribbean (Projection)",
+    "Middle East, North Africa, Afghanistan & Pakistan",
+    "Middle East, North Africa, Afghanistan & Pakistan (Projection)",
+    "North America","North America (Projection)",
+    "South Asia","South Asia (Projection)",
+    "Sub-Saharan Africa","Sub-Saharan Africa (Projection)",
+    "Eastern & Southern Africa","Eastern & Southern Africa (Projection)",
+    "Western & Central Africa","Western & Central Africa (Projection)"
+  )[seq_along(keep_cols)]
+  
+  colnames(dta_wide) <- new_names
+  
+  # ---- STEP 6. Poverty line labels, rounding, blanks
+  out <- dta_wide %>%
+    dplyr::mutate(
+      `Poverty line` = dplyr::case_when(
+        round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
+        round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
+        round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
+        TRUE ~ as.character(`Poverty line`)
+      )
+    ) %>%
+    dplyr::mutate(
+      dplyr::across(
+        -c(Year, `Poverty line`),
+        ~ round(clean_to_numeric(.), 1)
+      )
+    ) %>%
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ ifelse(is.na(.), "", .)))
+  
+  return(out)
+}
 
-build_fig2 <- function(povline,
+# Builder for Figure 4 & 5
+
+build_fig4_5 <- function(povline,
                        year_start_fig4_5,
                        year_end_fig4_5,
                        dta_proj_scen_wide_final,
@@ -255,163 +456,9 @@ build_fig2 <- function(povline,
   out
 }
 
-# ------- Builder for F3 ---------
+# Builder for Figure 8
 
-# ---- Fig 3 builder ----
-build_fig3_table <- function(dta_fig_3,
-                             min_year   = 1990,
-                             fill_year  = 2024) {
-  
-  # target regions and their long names (for columns)
-  regions_code <- c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")
-  regions_name <- c(
-    "Eastern and Southern Africa",
-    "Western and Central Africa",
-    "East Asia & Pacific",
-    "Europe & Central Asia",
-    "Latin America & Caribbean",
-    "Middle East, North Africa, Afghanistan & Pakistan",
-    "North America",
-    "South Asia",
-    "Sub-Saharan Africa",
-    "World"
-  )
-  
-  # 1. filter, transform, and standardize estimate_type
-  d_long <- dta_fig_3 %>%
-    filter(region_code %in% regions_code, year >= min_year) %>%
-    mutate(
-      hc = headcount * 100,
-      estimate_type = case_when(
-        estimate_type == "actual" ~ "obs",
-        estimate_type %in% c("projection","nowcast") ~ "proj",
-        TRUE ~ estimate_type
-      ),
-      year = as.character(year)
-    ) %>%
-    select(poverty_line, year, region_name, estimate_type, hc)
-  
-  # 2. reshape wide: Region_obs, Region_proj
-  d_wide <- d_long %>%
-    pivot_wider(
-      names_from  = c(region_name, estimate_type),
-      values_from = hc,
-      names_glue  = "{region_name}_{estimate_type}"
-    ) %>%
-    arrange(poverty_line, as.numeric(year))
-  
-  # 3. connect dotted lines at fill_year by copying obs -> proj when proj missing
-  for (r in regions_name) {
-    proj <- paste0(r, "_proj"); obs <- paste0(r, "_obs")
-    if (!proj %in% names(d_wide)) d_wide[[proj]] <- NA_real_
-    if (!obs  %in% names(d_wide)) d_wide[[obs]]  <- NA_real_
-    d_wide[[proj]] <- ifelse(d_wide$year == as.character(fill_year) & is.na(d_wide[[proj]]),
-                             d_wide[[obs]], d_wide[[proj]])
-  }
-  
-  # 4. auto smooth: if proj exists at year t, fill proj at year t-1 with obs(t-1)
-  d_wide$year <- as.integer(d_wide$year)
-  d_wide <- d_wide[order(d_wide$poverty_line, d_wide$year), ]
-  proj_cols <- grep("_proj$", names(d_wide), value = TRUE)
-  grp_idx   <- split(seq_len(nrow(d_wide)), d_wide$poverty_line)
-  
-  for (col in proj_cols) {
-    obs_col <- sub("_proj$", "_obs", col)
-    if (!obs_col %in% names(d_wide)) next
-    for (rows in grp_idx) {
-      yr   <- d_wide$year[rows]
-      proj <- d_wide[rows, col][[1]]
-      obs  <- d_wide[rows, obs_col][[1]]
-      next_has_proj <- c(!is.na(proj[-1]) & yr[-1] == yr[-length(yr)] + 1, FALSE)
-      fill_here     <- is.na(proj) & next_has_proj
-      if (any(fill_here)) d_wide[rows[fill_here], col] <- obs[fill_here]
-    }
-  }
-  
-  # 5. reorder and rename headers to match your Excel Flourish layout
-  new_col_order <- c(
-    "poverty_line","year",
-    "World_obs","World_proj",
-    "East Asia & Pacific_obs","East Asia & Pacific_proj",
-    "Europe & Central Asia_obs","Europe & Central Asia_proj",
-    "Latin America & Caribbean_obs","Latin America & Caribbean_proj",
-    "Middle East, North Africa, Afghanistan & Pakistan_obs",
-    "Middle East, North Africa, Afghanistan & Pakistan_proj",
-    "North America_obs","North America_proj",
-    "South Asia_obs","South Asia_proj",
-    "Sub-Saharan Africa_obs","Sub-Saharan Africa_proj",
-    "Eastern and Southern Africa_obs","Eastern and Southern Africa_proj",
-    "Western and Central Africa_obs","Western and Central Africa_proj"
-  )
-  
-  nice_names <- c(
-    "Poverty line","Year",
-    "World (Observed)","World",
-    "East Asia & Pacific (Observed)","East Asia & Pacific",
-    "Europe & Central Asia (Observed)","Europe & Central Asia",
-    "Latin America & Caribbean (Observed)","Latin America & Caribbean",
-    "Middle East, North Africa, Afghanistan & Pakistan (Observed)",
-    "Middle East, North Africa, Afghanistan & Pakistan",
-    "North America (Observed)","North America",
-    "South Asia (Observed)","South Asia",
-    "Sub-Saharan Africa (Observed)","Sub-Saharan Africa",
-    "Eastern & Southern Africa (Observed)","Eastern & Southern Africa",
-    "Western & Central Africa (Observed)","Western & Central Africa"
-  )
-  
-  # ensure all columns exist before selecting
-  for (nm in new_col_order) if (!nm %in% names(d_wide)) d_wide[[nm]] <- NA_real_
-  
-  d_out <- d_wide %>%
-    select(any_of(new_col_order))
-  
-  names(d_out) <- nice_names
-  
-  # 6. format poverty line labels
-  d_out <- d_out %>%
-    mutate(
-      `Poverty line` = case_when(
-        round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
-        round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
-        round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
-        TRUE ~ as.character(`Poverty line`)
-      ),
-      Year = as.character(Year)
-    )
-  
-  d_out
-}
-
-# ---- Main wrapper you can call from your pipeline ----
-build_and_export_fig3 <- function(dta_fig_3, xlsx_path = NULL, ...) {
-  out <- build_fig3_table(dta_fig_3, ...)
-  if (!is.null(xlsx_path)) {
-    # write to Excel if a path is provided
-    if (!requireNamespace("writexl", quietly = TRUE)) {
-      stop("Please install writexl to export: install.packages('writexl')")
-    }
-    writexl::write_xlsx(list(Flourish = out), path = xlsx_path)
-  }
-  out
-}
-
-# ------- Builder for Figure 4 ---------
-
-# Keep only the last k non-NA entries for any column name matching a regex pattern
-.keep_last_k_by_pattern <- function(df, pattern = "\\(forecast\\)", k = 2) {
-  for (col in names(df)) {
-    if (grepl(pattern, col)) {
-      non_na_idx <- which(!is.na(df[[col]]))
-      if (length(non_na_idx) > k) {
-        drop_idx <- head(non_na_idx, length(non_na_idx) - k)
-        df[[col]][drop_idx] <- NA
-      }
-    }
-  }
-  df
-}
-
-build_fig4 <- function(df,
+build_fig8 <- function(df,
                        label = "Global Prosperity Gap",
                        digits = 2,
                        keep_last_k = 2) {
@@ -476,24 +523,10 @@ build_fig4 <- function(df,
   out
 }
 
-# Figure 4b
-.recode_regions_fig4b <- function(df) {
-  df %>%
-    dplyr::mutate(
-      region = dplyr::recode(
-        region_name,
-        "East Asia & Pacific"         = "East Asia and Pacific",
-        "Latin America & Caribbean"   = "Latin America and the Caribbean",
-        "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
-        "North America" = "North America",
-        "Europe & Central Asia"       = "Europe and Central Asia",
-        .default = region_name
-      )
-    )
-}
+# Builder for Figure 9
 
-build_fig4b <- function(df, digits = 2) {
-  df1 <- .recode_regions_fig4b(df) %>%
+build_fig9 <- function(df, digits = 2) {
+  df1 <- .recode_regions_fig9(df) %>%
     dplyr::select(region, pop_share, pg_share) %>%
     # make sure shares are numeric (remove % if any)
     dplyr::mutate(
@@ -542,16 +575,28 @@ build_fig4b <- function(df, digits = 2) {
     dplyr::mutate(dplyr::across(-Country, ~ ifelse(is.na(.x), "", .x)))
 }
 
+.recode_regions_fig9 <- function(df) {
+  df %>%
+    dplyr::mutate(
+      region = dplyr::recode(
+        region_name,
+        "East Asia & Pacific"         = "East Asia and Pacific",
+        "Latin America & Caribbean"   = "Latin America and the Caribbean",
+        "Middle East, North Africa, Afghanistan & Pakistan"  = "Middle East, North Africa, Afghanistan and Pakistan",
+        "North America" = "North America",
+        "Europe & Central Asia"       = "Europe and Central Asia",
+        .default = region_name
+      )
+    )
+}
 
+# Builder for Figure 10
 
-# ------- Builder for Figure 5 ---------
-
-# ---- Figure 5 helper: PG growth decomposition (global) ----
 # Input  : country-year data with cols: country_code, year, mean, gini, pop, pg
 # Output : tibble with the four components + a check column
 # Notes  : Implements the same logic as the Stata code you shared
 
-build_fig5 <- function(dta_fig_5,
+build_fig10 <- function(dta_fig_5,
                          z = 25,
                          keep_years = c(1990, 2000, 2010, 2019, 2025),
                          last_label_override = "2019–2025 (projected)") {
@@ -635,14 +680,12 @@ build_fig5 <- function(dta_fig_5,
 }
 
 
-# ------- Builder for Figure 6 ---------
-
-# ---- Figure 6: Share of countries by income and FCV group (latest survey)
+# Builder for Figure 6 
 
 # Inputs expected:
 # - WDI_Gini: columns country, iso3c, year, SI.POV.GINI, ...
 # - countrycodes_current: columns code, incgroup_current, fcv, ...
-build_fig6 <- function(WDI_Gini, countrycodes_current) {
+build_fig12_13 <- function(WDI_Gini, countrycodes_current) {
   
   # 1) keep latest non-missing Gini by country (proxy for *_latest.dta)
   latest_gini <- WDI_Gini %>%
@@ -723,27 +766,5 @@ build_fig6 <- function(WDI_Gini, countrycodes_current) {
 }
 
 
-# ------- Get latest value ---------
 
-get_latest_value <- function(df, var) {
-  var <- rlang::ensym(var)
-  var_name <- rlang::as_name(var)
-  new_col  <- paste0(var_name, "_latest")
-  
-  df %>%
-    filter(!is.na(!!var)) %>%
-    group_by(country_code) %>%
-    slice_max(order_by = year, n = 1, with_ties = FALSE) %>%
-    ungroup() %>%
-    select(country_code, !!new_col := !!var)
-}
-
-# ------- Numeric transformation ---------
-
-# helper to coerce numeric-like text (e.g., "1,234.56", "12.3%") to numeric
-clean_to_numeric <- function(x) {
-  x <- gsub(",", "", x)
-  x <- sub("%$", "", x)
-  suppressWarnings(as.numeric(x))
-}
 

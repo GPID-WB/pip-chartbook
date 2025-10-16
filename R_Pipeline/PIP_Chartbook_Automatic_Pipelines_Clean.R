@@ -202,7 +202,7 @@ source("R_Pipeline/PIP_Chartbook_Functions_Clean.R")
 
 # ---- F1 - Poverty Rate forecasted 2030 ----
 
-res <- build_fig1(
+dta_fig_1 <- build_fig1(
   dta_proj = dta_proj,
   dta_pip  = dta_pip,
   pov_lines = pov_lines,
@@ -211,7 +211,7 @@ res <- build_fig1(
   millions3pct2030 = millions3pct2030
 )
 
-dta_fig_1_final <- res$fig1a %>%
+dta_fig_1_final <- dta_fig_1$fig1a %>%
   rename("Poverty rate at $3.00" = "Poverty rate at $3.0", 
          "Poverty rate at $4.20" = "Poverty rate at $4.2",
          "Poverty rate at $8.30" = "Poverty rate at $8.3")
@@ -220,7 +220,7 @@ write_csv(dta_fig_1_final, "csv/chartbook_F1.csv")
 
 # ---- F2 - Number of Poor forecasted 2030 ----
 
-dta_fig_2_final <- res$fig1b %>%
+dta_fig_2_final <- dta_fig_1$fig1b %>%
   rename("Millions of poor at $3.00" = "Millions of poor at $3.0", 
          "Millions of poor at $4.20" = "Millions of poor at $4.2",
          "Millions of poor at $8.30" = "Millions of poor at $8.3")
@@ -232,210 +232,12 @@ write_csv(dta_fig_2_final, "csv/chartbook_F2.csv")
 dta_fig_3 <- dta_pip %>%
   select(poverty_line, region_code, region_name, year, headcount, estimate_type)
 
-# STEP 1. Keep target regions and years
-regions <- c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")
-
-regions_name <- c(
-  "Eastern and Southern Africa",
-  "Western and Central Africa",
-  "East Asia & Pacific",
-  "Europe & Central Asia",
-  "Latin America & Caribbean",
-  "Middle East, North Africa, Afghanistan & Pakistan",
-  "North America",
-  "South Asia",
-  "Sub-Saharan Africa",
-  "World"
+dta_fig_3_final <- build_fig3(
+  dta_fig_3          = dta_fig_3,
+  year_start_fig1    = 1990,   # or your object year_start_fig1
+  bridge_year        = 2024    # keep dotted lines connected for 2024
 )
 
-dta_fig_3 <- dta_fig_3 %>%
-  filter(region_code %in% regions, year >= year_start_fig1) %>%          # keep regions and years
-  mutate(
-    hc = headcount * 100,                                     # headcount to percent
-    estimate_type = case_when(                                # Stata replace logic
-      estimate_type == "actual" ~ "obs",
-      estimate_type %in% c("projection","nowcast") ~ "proj",
-      TRUE ~ estimate_type
-    ),
-    year = as.character(year)                                 # Stata tostring
-  ) %>%
-  select(poverty_line, year, region_name, estimate_type, hc)
-
-# STEP 2. Reshape wide like Stata's two-stage reshape
-# First by region, then by estimate_type, ending with columns like WLD_obs, WLD_proj, etc.
-dta_fig_3_wide <- dta_fig_3 %>%
-  pivot_wider(
-    names_from  = c(region_name, estimate_type),
-    values_from = hc,
-    names_glue  = "{region_name}_{estimate_type}"
-  ) %>%
-  arrange(poverty_line, as.numeric(year))
-
-# STEP 4. Fill gaps so dotted lines connect for 2024
-# Stata: replace r_proj = r_obs if r_proj==. & year=="2024"
-for (r in regions_name) {
-  proj <- paste0(r, "_proj"); obs <- paste0(r, "_obs")
-  dta_fig_3_wide[[proj]] <- ifelse(dta_fig_3_wide$year == "2024" & is.na(dta_fig_3_wide[[proj]]),
-                           dta_fig_3_wide[[obs]], dta_fig_3_wide[[proj]])
-}
-
-regions_name <- c(
-  "Eastern and Southern Africa",
-  "Western and Central Africa",
-  "East Asia & Pacific",
-  "Europe & Central Asia",
-  "Latin America & Caribbean",
-  "Middle East, North Africa, Afghanistan & Pakistan",
-  "North America",
-  "South Asia",
-  "Sub-Saharan Africa",
-  "World"
-)
-
-# STEP 5. Smooth specific transitions so observed and projected meet cleanly
-# Ensure ordering
-dta_fig_3_wide$year <- as.integer(dta_fig_3_wide$year)
-dta_fig_3_wide <- dplyr::arrange(dta_fig_3_wide, poverty_line, year)
-
-# All projection columns
-proj_cols <- grep("_proj$", names(dta_fig_3_wide), value = TRUE)
-
-# Indices by poverty line
-grp_idx <- split(seq_len(nrow(dta_fig_3_wide)), dta_fig_3_wide$poverty_line)
-
-for (col in proj_cols) {
-  obs_col <- sub("_proj$", "_obs", col)
-  if (!obs_col %in% names(dta_fig_3_wide)) next
-  
-  for (rows in grp_idx) {
-    # within-group slices
-    yr   <- dta_fig_3_wide$year[rows]
-    proj <- dta_fig_3_wide[rows, col][[1]]
-    obs  <- dta_fig_3_wide[rows, obs_col][[1]]
-    
-    # If no projections in this group, skip
-    proj_idx <- which(!is.na(proj))
-    if (length(proj_idx) == 0L) next
-    
-    # Find contiguous projection blocks (by year continuity)
-    # e.g., 2001,2002,2003 is one block; 2010,2011 another
-    cut_points <- c(1L, which(diff(proj_idx) > 1L) + 1L)
-    block_starts <- proj_idx[cut_points]
-    block_ends   <- proj_idx[c(cut_points[-1] - 1L, length(proj_idx))]
-    
-    # For each projection block, set proj to equal obs at the year
-    # immediately before and after the block, if those rows exist
-    for (b in seq_along(block_starts)) {
-      s <- block_starts[b]
-      e <- block_ends[b]
-      
-      # one year BEFORE the block
-      if (s > 1L) {
-        before_idx <- s - 1L
-        # only set if obs is available
-        if (!is.na(obs[before_idx])) proj[before_idx] <- obs[before_idx]
-      }
-      
-      # one year AFTER the block
-      if (e < length(proj)) {
-        after_idx <- e + 1L
-        if (!is.na(obs[after_idx])) proj[after_idx] <- obs[after_idx]
-      }
-    }
-    
-    # Optional: keep your original “bridge” rule so proj(t) copies obs(t)
-    # when proj(t+1) exists but proj(t) is NA (helps one-sided edges)
-    next_has_proj <- c(!is.na(proj[-1]) & yr[-1] == yr[-length(yr)] + 1L, FALSE)
-    fill_here <- is.na(proj) & next_has_proj
-    if (any(fill_here)) proj[fill_here] <- obs[fill_here]
-    
-    # write back
-    dta_fig_3_wide[rows, col] <- proj
-  }
-}
-
-
-# Rename and reorder 
-
-# Desired final column order and names
-new_col_order <- c(
-  "poverty_line",
-  "year",
-  "World_obs",
-  "World_proj",
-  "East Asia & Pacific_obs",
-  "East Asia & Pacific_proj",
-  "Europe & Central Asia_obs",
-  "Europe & Central Asia_proj",
-  "Latin America & Caribbean_obs",
-  "Latin America & Caribbean_proj",
-  "Middle East, North Africa, Afghanistan & Pakistan_obs",
-  "Middle East, North Africa, Afghanistan & Pakistan_proj",
-  "North America_obs",
-  "North America_proj",
-  "South Asia_obs",
-  "South Asia_proj",
-  "Sub-Saharan Africa_obs",
-  "Sub-Saharan Africa_proj",
-  "Eastern and Southern Africa_obs",
-  "Eastern and Southern Africa_proj",
-  "Western and Central Africa_obs",
-  "Western and Central Africa_proj"
-)
-
-# Rename to use parentheses for observed series (for Excel display)
-new_names <- c(
-  "Poverty line",
-  "Year",
-  "World",
-  "World (Projection)",
-  "East Asia & Pacific",
-  "East Asia & Pacific (Projection)",
-  "Europe & Central Asia",
-  "Europe & Central Asia (Projection)",
-  "Latin America & Caribbean",
-  "Latin America & Caribbean (Projection)",
-  "Middle East, North Africa, Afghanistan & Pakistan",
-  "Middle East, North Africa, Afghanistan & Pakistan (Projection)",
-  "North America",
-  "North America (Projection)",
-  "South Asia",
-  "South Asia (Projection)",
-  "Sub-Saharan Africa",
-  "Sub-Saharan Africa (Projection)",
-  "Eastern & Southern Africa",
-  "Eastern & Southern Africa (Projection)",
-  "Western & Central Africa",
-  "Western & Central Africa (Projection)"
-)
-
-# Apply reorder and rename
-dta_fig_3_wide <- dta_fig_3_wide %>%
-  dplyr::select(any_of(new_col_order))
-
-colnames(dta_fig_3_wide) <- new_names
-
-# Rename poverty line 
-dta_fig_3_wide <- dta_fig_3_wide %>%
-  mutate(
-    `Poverty line` = case_when(
-      round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
-      round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
-      round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
-      TRUE ~ as.character(`Poverty line`)
-    )
-  ) 
-
-dta_fig_3_final <- dta_fig_3_wide %>%
-  mutate(
-    across(
-      -c(Year, `Poverty line`),          # exclude these two columns
-      ~ round(clean_to_numeric(.), 1)     # coerce then round to 1 decimal
-    )
-  ) %>% 
-  mutate(across(everything(), ~ifelse(is.na(.), "", .)))
-
-  
 write_csv(dta_fig_3_final, "csv/chartbook_F3.csv")
 
 
@@ -474,7 +276,7 @@ dta_proj_scen_wide_final <- dta_proj_scen_wide %>%
   left_join(dta_proj_cur, by = c("year","povertyline"))
   
 # (povline 3.0)
-dta_fig_4_final <- build_fig2(
+dta_fig_4_final <- build_fig4_5(
   povline = 3.0,
   year_start_fig4_5 = year_start_fig4_5,
   year_end_fig4_5   = year_end_fig4_5,
@@ -488,7 +290,7 @@ write_csv(dta_fig_4_final, "csv/chartbook_F4.csv")
 # ---- F5 - Projections of poverty until 2050 under different scenarios ($8.3)----
 
 # (povline 8.3)
-dta_fig_5_final <- build_fig2(
+dta_fig_5_final <- build_fig4_5(
   povline = 8.3,
   year_start_fig4_5 = year_start_fig4_5,
   year_end_fig4_5   = year_end_fig4_5,
@@ -625,7 +427,7 @@ dta_fig_8 <- dta_pip %>%
     TRUE                          ~ estimate_type
   ))
 
-dta_fig_8_final <- build_fig4(
+dta_fig_8_final <- build_fig8(
   df = dta_fig_8,
   label = "Global Prosperity Gap",
   digits = 2,
@@ -658,7 +460,7 @@ dta_fig_9 <- dta_pip %>%
   select(region_name, pop_share, pg_share)
 
 # dta_fig_9 has: region_name, pop_share, pg_share (already in percent or proportion)
-dta_fig_9_final <- build_fig4b(dta_fig_9, digits = 2)
+dta_fig_9_final <- build_fig9(dta_fig_9, digits = 2)
 write_csv(dta_fig_9_final, "csv/chartbook_F9.csv")
 
 
@@ -667,7 +469,7 @@ write_csv(dta_fig_9_final, "csv/chartbook_F9.csv")
 dta_fig_10 <- dta_pip_ctry %>%
   select(country_code, year, mean, gini, pop, pg)
 
-dta_fig_10_final <- build_fig5(dta_fig_10) %>%
+dta_fig_10_final <- build_fig10(dta_fig_10) %>%
   select(-check_sum)
 
 write_csv(dta_fig_10_final, "csv/chartbook_F10.csv")
@@ -733,7 +535,7 @@ countrycodes_current <- dta_class %>%
   select(code, economy, region, region_pip, ida_current, region_SSA, 
          incgroup_current, fcv)
 
-dta_fig_12_13 <- build_fig6(WDI_Gini, countrycodes_current)
+dta_fig_12_13 <- build_fig12_13(WDI_Gini, countrycodes_current)
 
 dta_fig_12_final <- dta_fig_12_13 %>%
   select(name, `Low inequality`, `Moderate inequality`, `High inequality`) %>%
