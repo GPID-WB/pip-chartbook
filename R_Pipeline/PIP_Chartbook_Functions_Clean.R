@@ -166,9 +166,9 @@ get_latest_value_2 <- function(df, var) {
 # Inputs:
 #   dta_proj, dta_pip: long frames with region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type
 #   pov_lines: numeric vector, e.g. c(3.0, 4.2, 8.3)
-#   year_start_fig1_2: first year to keep in output
+#   general_year_start: first year to keep in output
 #   line3pct, millions3pct2030: scalars to append as columns
-build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1_2, line3pct, millions3pct2030) {
+build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, general_year_start, line3pct, millions3pct2030) {
   
   pov_lines_fmt <- format(pov_lines, nsmall = 1, trim = TRUE)  # "3.0" "4.2" "8.3"
   
@@ -226,7 +226,7 @@ build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1_2, line3p
   
   # 6) Filter start year, enforce numeric, apply rounding, NA → ""
   wide <- wide %>%
-    dplyr::filter(year >= year_start_fig1_2) %>%
+    dplyr::filter(year >= general_year_start) %>%
     dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(.)))) %>%
     dplyr::mutate(dplyr::across(where(is.numeric), ~ {
       if (startsWith(cur_column(), "headcount_")) round(., 5) else round(., 0)
@@ -259,7 +259,7 @@ build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1_2, line3p
 # Builder for Figure 3
 
 build_fig3 <- function(dta_fig_3,
-                       year_start_fig3 = 1990,
+                       general_year_start = 1990,
                        bridge_year = 2024,
                        regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD"),
                        regions_name = c(
@@ -284,7 +284,7 @@ build_fig3 <- function(dta_fig_3,
   
   # ---- STEP 1. Filter, recode, prepare
   dta_long <- dta_fig_3 %>%
-    dplyr::filter(region_code %in% regions, year >= year_start_fig3) %>%
+    dplyr::filter(region_code %in% regions, year >= general_year_start) %>%
     dplyr::mutate(
       hc = headcount * 100,
       estimate_type = dplyr::case_when(
@@ -471,14 +471,14 @@ build_fig4_5 <- function(povline,
 build_fig6 <- function(dta_class,
                        dta_pip_ctry,
                        year_start_fig6,
-                       year_end_fig6) {
+                       general_year_end) {
 
   # ---- 2) Combine with pip data
   dta_fig_6 <- left_join(dta_pip_ctry, dta_class_inc,
                          by = "country_code") %>%
     select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
     filter(year >= year_start_fig6 &
-             year <= year_end_fig6)
+             year <= general_year_end)
   
   # ---- 3) Split different poverty line (only first two)
   dta_fig_6a <- dta_fig_6 %>%
@@ -712,7 +712,7 @@ build_fig9 <- function(df, digits = 2) {
 
 build_fig10 <- function(dta_fig_5,
                          z = 25,
-                         keep_years = c(1990, 2000, 2010, 2019, year_end_fig10),
+                         keep_years = c(1990, 2000, 2010, 2019, general_year_end ),
                          last_label_override = "2019–2025 (projected)") {
   
   stopifnot(all(c("year","pop","mean","pg") %in% names(dta_fig_5)))

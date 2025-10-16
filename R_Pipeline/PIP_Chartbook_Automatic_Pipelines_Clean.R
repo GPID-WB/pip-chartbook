@@ -41,6 +41,7 @@ library(tsibble)
 
 pov_lines <- c(3.0, 4.2, 8.3)
 
+# If not specify, we will use general start and end year
 general_year_start <- 1990 
 general_year_end <- 2025 
 
@@ -48,11 +49,9 @@ general_year_end <- 2025
 # *********
 line3pct <- 0 
 millions3pct2030 <- 256
-year_start_fig1_2 <- general_year_start
 
 # F3 - Poverty rates by region
 # *********
-year_start_fig3 <- general_year_start
 year_bridge_fig3 <- 2024
   
 # F4 & 5 - Projections of poverty until 2050 under different scenarios
@@ -63,31 +62,6 @@ year_end_fig4_5 <- 2050
 # F6 - Poverty is still above pre-pandemic levels ($3.0 & $8.3)
 # *********
 year_start_fig6 <- 2019
-year_end_fig6 <- general_year_end
-
-# F7 - Millions of Poor by region
-# *********
-year_end_fig7 <- general_year_end
-
-# F8 - Stalled progress in Global Prosperity Gap Reduction (Global Prosperity Gap)
-# *********
-year_start_fig8 <- general_year_start 
-
-# F9 - Stalled progress in Global Prosperity Gap Reduction (Regional Shares)
-# *********
-year_end_fig9 <- general_year_end 
-
-# F10 - Limited Gains in the Global Prosperity Gap
-# *********
-year_end_fig10 <- general_year_end
-
-# F14 - Income levels in the world have grown between 1990
-# *********
-year_fig14 <- general_year_start
-
-# F15 - Income levels in the world have grown between 2025
-# *********
-year_fig15 <- general_year_end
 
 # F16 - Increased concentration of extreme poverty in Sub-Saharan Africa
 # *********
@@ -222,7 +196,7 @@ dta_fig_1_2 <- build_fig1_2(
   dta_proj = dta_proj,
   dta_pip  = dta_pip,
   pov_lines = pov_lines,
-  year_start_fig1_2 = year_start_fig1_2,
+  general_year_start = general_year_start,
   line3pct = line3pct,
   millions3pct2030 = millions3pct2030
 )
@@ -250,7 +224,7 @@ dta_fig_3 <- dta_pip %>%
 
 dta_fig_3_final <- build_fig3(
   dta_fig_3          = dta_fig_3,
-  year_start_fig3    = year_start_fig3,   
+  general_year_start    = general_year_start,   
   bridge_year        = year_bridge_fig3   
 )
 
@@ -333,7 +307,7 @@ dta_fig_6_final <- build_fig6(
   dta_class      = dta_class,
   dta_pip_ctry   = dta_pip_ctry,
   year_start_fig6 = year_start_fig6,   
-  year_end_fig6   = year_end_fig6     
+  general_year_end   = general_year_end     
 )
 
 # Export csv file 
@@ -345,7 +319,7 @@ write_csv(dta_fig_6_final, "csv/chartbook_F6.csv")
 
 dta_fig_7_final <- build_fig7(
   dta_pip_ctry = dta_pip_ctry,
-  target_year  = year_end_fig7
+  target_year  = general_year_end
 )
 
 write_csv(dta_fig_7_final, "csv/chartbook_F7.csv")
@@ -356,7 +330,7 @@ write_csv(dta_fig_7_final, "csv/chartbook_F7.csv")
 dta_fig_8 <- dta_pip %>%
   filter(region_name == "World",
          poverty_line == 3.0, 
-         year >= year_start_fig8) %>%
+         year >= general_year_start ) %>%
   select(year, pg, estimate_type) %>%
   mutate(estimate_type = case_when(
     estimate_type == "projection" ~ "actual",
@@ -388,7 +362,7 @@ region_keep <- c("North America", "Sub-Saharan Africa", "South Asia",
 
 dta_fig_9 <- dta_pip %>%
   filter(poverty_line == 3.0, 
-         year >= year_end_fig9, 
+         year >= general_year_end , 
          region_name %in% region_keep) %>%
   select(region_name, pop, pg) %>%
   mutate(pop_share = round(100*(pop/sum(pop, na.rm = TRUE)),2),
@@ -466,7 +440,7 @@ write_csv(dta_fig_13_final, "csv/chartbook_F13.csv")
 dta_fig_14_final_v2 <- build_fig14_15(
   dta_inc_dist   = dta_inc_dist,
   dta_class_inc  = dta_class_inc,
-  target_year    = year_fig14   # e.g., 1990
+  target_year    = general_year_start   # e.g., 1990
 )
 
 write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
@@ -477,7 +451,7 @@ write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
 dta_fig_15_final_v2 <- build_fig14_15(
   dta_inc_dist   = dta_inc_dist,
   dta_class_inc  = dta_class_inc,
-  target_year    = year_fig15   # e.g., 2024
+  target_year    = general_year_end   # e.g., 2024
 )
 
 write_csv(dta_fig_15_final_v2, "csv/chartbook_F15.csv")
