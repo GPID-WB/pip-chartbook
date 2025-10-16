@@ -965,3 +965,27 @@ write_csv(dta_fig_16_final_v2, "csv/chartbook_F16.csv")
 
 # ---- F17 - Millions of poor lived below the $3.00 per day ------
 
+dta_fig_17 <- dta_pip %>%
+  filter(region_code %in% regions) %>%
+  select(year, region_name, poverty_line, pop_in_poverty) %>%
+  pivot_wider(
+    names_from = region_name, 
+    values_from = pop_in_poverty
+  ) %>%
+  select(poverty_line, year, "East Asia & Pacific", "South Asia", "Sub-Saharan Africa", 
+          "Latin America & Caribbean", "Middle East, North Africa, Afghanistan & Pakistan", 
+         "Europe & Central Asia", "North America") %>%
+  rename("East Asia Pacific" = "East Asia & Pacific",
+         "Europe and Central Asia" = "Europe & Central Asia",
+         "Latin America and Caribbean" = "Latin America & Caribbean",
+         `Poverty line` = poverty_line) %>%
+  mutate(
+    `Poverty line` = case_when(
+      round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
+      round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
+      round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
+      TRUE ~ as.character(`Poverty line`)
+    )
+  ) 
+
+write_csv(dta_fig_17, "csv/chartbook_F17.csv")
