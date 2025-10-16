@@ -962,3 +962,6 @@ dta_fig_16_final_v2 <- dta_fig_16_grouped %>%
 
 write_csv(dta_fig_16_final_v2, "csv/chartbook_F16.csv")
 
+
+# ---- F17 - Millions of poor lived below the $3.00 per day ------
+
