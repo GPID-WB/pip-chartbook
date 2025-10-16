@@ -44,15 +44,15 @@ pov_lines <- c(3.0, 4.2, 8.3)
 general_year_start <- 1990 
 general_year_end <- 2025 
 
-# F1 - Poverty Rate forecasted 2030
+# F1 & 2 - Poverty Rate and Millions of Poor forecasted 2030
 # *********
 line3pct <- 0 
 millions3pct2030 <- 256
-year_start_fig1 <- general_year_start
+year_start_fig1_2 <- general_year_start
 
 # F3 - Poverty rates by region
 # *********
-year_start_fig3 <- year_start_fig1
+year_start_fig3 <- general_year_start
 year_bridge_fig3 <- 2024
   
 # F4 & 5 - Projections of poverty until 2050 under different scenarios
@@ -76,6 +76,10 @@ year_start_fig8 <- general_year_start
 # F9 - Stalled progress in Global Prosperity Gap Reduction (Regional Shares)
 # *********
 year_end_fig9 <- general_year_end 
+
+# F10 - Limited Gains in the Global Prosperity Gap
+# *********
+year_end_fig10 <- general_year_end
 
 # F14 - Income levels in the world have grown between 1990
 # *********
@@ -218,7 +222,7 @@ dta_fig_1_2 <- build_fig1_2(
   dta_proj = dta_proj,
   dta_pip  = dta_pip,
   pov_lines = pov_lines,
-  year_start_fig1 = year_start_fig1,
+  year_start_fig1_2 = year_start_fig1_2,
   line3pct = line3pct,
   millions3pct2030 = millions3pct2030
 )
@@ -402,7 +406,8 @@ write_csv(dta_fig_9_final, "csv/chartbook_F9.csv")
 dta_fig_10 <- dta_pip_ctry %>%
   select(country_code, year, mean, gini, pop, pg)
 
-dta_fig_10_final <- build_fig10(dta_fig_10) %>%
+dta_fig_10_final <- build_fig10(dta_fig_10,
+                                last_label_override = "2019–2025 (projected)") %>%
   select(-check_sum)
 
 write_csv(dta_fig_10_final, "csv/chartbook_F10.csv")

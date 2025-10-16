@@ -166,9 +166,9 @@ get_latest_value_2 <- function(df, var) {
 # Inputs:
 #   dta_proj, dta_pip: long frames with region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type
 #   pov_lines: numeric vector, e.g. c(3.0, 4.2, 8.3)
-#   year_start_fig1: first year to keep in output
+#   year_start_fig1_2: first year to keep in output
 #   line3pct, millions3pct2030: scalars to append as columns
-build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, millions3pct2030) {
+build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1_2, line3pct, millions3pct2030) {
   
   pov_lines_fmt <- format(pov_lines, nsmall = 1, trim = TRUE)  # "3.0" "4.2" "8.3"
   
@@ -226,7 +226,7 @@ build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct
   
   # 6) Filter start year, enforce numeric, apply rounding, NA → ""
   wide <- wide %>%
-    dplyr::filter(year >= year_start_fig1) %>%
+    dplyr::filter(year >= year_start_fig1_2) %>%
     dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(.)))) %>%
     dplyr::mutate(dplyr::across(where(is.numeric), ~ {
       if (startsWith(cur_column(), "headcount_")) round(., 5) else round(., 0)
@@ -712,7 +712,7 @@ build_fig9 <- function(df, digits = 2) {
 
 build_fig10 <- function(dta_fig_5,
                          z = 25,
-                         keep_years = c(1990, 2000, 2010, 2019, 2025),
+                         keep_years = c(1990, 2000, 2010, 2019, year_end_fig10),
                          last_label_override = "2019–2025 (projected)") {
   
   stopifnot(all(c("year","pop","mean","pg") %in% names(dta_fig_5)))
