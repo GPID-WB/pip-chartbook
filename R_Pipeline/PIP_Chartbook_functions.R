@@ -211,7 +211,7 @@ build_fig1 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, 
 build_fig2 <- function(povline,
                        year_start_fig2,
                        year_end_fig2,
-                       dta_proj_scen_wide,
+                       dta_proj_scen_wide_final,
                        dta_proj,
                        round_digits = 2) {
   
@@ -234,31 +234,16 @@ build_fig2 <- function(povline,
     ) %>%
     complete(year = full_seq(c(min(year), year_end_fig2), 1))
   
-  # 2) Scenario rows for this povline
-  dta_proj_scen_p <- dta_proj_scen_wide %>% filter(povertyline == povline)
-  
-  # 3) Current forecast + historical growth from dta_proj (same povline)
-  dta_proj_fc <- dta_proj %>%
-    filter(poverty_line == povline) %>%
-    mutate(`Current forecast + historical growth` = headcount * 100) %>%
-    select(year, `Current forecast + historical growth`)
-  
-  # 4) Merge base + scenarios (avoid duplicate years), then bring in the FC column
-  out <- bind_rows(
-    dta_fig_2 %>% anti_join(dta_proj_scen_p, by = "year"),
+  # 2) Scenario rows for this povline  --------- CHANGED: use *_final
+  dta_proj_scen_p <- dta_proj_scen_wide_final %>%
+    dplyr::filter(povertyline == povline)
+
+  # 4) Merge base + scenarios; no extra join for FC column  --------- CHANGED
+  out <- dplyr::bind_rows(
+    dta_fig_2 %>% dplyr::anti_join(dta_proj_scen_p, by = "year"),
     dta_proj_scen_p
   ) %>%
-    select(-povertyline) %>%
-    left_join(
-      dta_proj_fc %>% transmute(year, add_fc = as.numeric(`Current forecast + historical growth`)),
-      by = "year"
-    ) %>%
-    mutate(`Current forecast + historical growth` =
-             dplyr::coalesce(`Current forecast + historical growth`, add_fc)) %>%
-    select(-add_fc)
-  
-  # 5) Extend "Current forecast + historical growth" to end year using historical growth from Observed
-  out <- extend_with_hist_growth(out, end_year = year_end_fig2)
+    dplyr::select(-povertyline)
   
   # 6) Fill ONLY the last Observed year across other numeric columns if NA
   out <- fill_last_observed_year(out, observed_col = "Observed", year_col = "year", digits = round_digits)

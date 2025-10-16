@@ -34,7 +34,7 @@ library(rlang)
 library(WDI)
 library(purrr)
 library(forcats)
-
+library(tsibble)
 
 
 # ---- 2. Define Various Inputs ----
@@ -131,6 +131,17 @@ dta_class <- read_dta("https://raw.githubusercontent.com/GPID-WB/Class/master/Ou
 
 ## 3) 2026-2030 Projection 
 dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_2026_2030_20250930_2021_01_02_PROD.dta") %>%
+  rename(poverty_line = povertyline,
+         pop_in_poverty = poorpop, 
+         headcount = fgt0, 
+         poverty_gap = fgt1, 
+         poverty_severity = fgt2) %>%
+  mutate(headcount = headcount/100, 
+         poverty_gap = poverty_gap/100, 
+         poverty_severity = poverty_severity/100,
+         pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
+
+dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_1981_2050_20250930_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -438,12 +449,24 @@ dta_proj_scen_wide <- dta_proj_scen %>%
          `4% growth` = `4pct growth`,
          )
 
+# Add Current + Historical growth forecast
+dta_proj_cur <- dta_proj_v2 %>%
+  filter(region_code == "WLD", 
+         year >= 2026) %>%
+  mutate(`Current forecast + historical growth` = headcount * 100) %>%
+  rename(povertyline = poverty_line) %>%
+  select(year, povertyline, `Current forecast + historical growth`)
+
+# Combine 
+dta_proj_scen_wide_final <- dta_proj_scen_wide %>%
+  left_join(dta_proj_cur, by = c("year","povertyline"))
+  
 # (povline 3.0)
 dta_fig_4_final <- build_fig2(
   povline = 3.0,
   year_start_fig2 = year_start_fig2,
   year_end_fig2   = year_end_fig2,
-  dta_proj_scen_wide = dta_proj_scen_wide,
+  dta_proj_scen_wide = dta_proj_scen_wide_final,
   dta_proj           = dta_proj
 )
 
@@ -457,7 +480,7 @@ dta_fig_5_final <- build_fig2(
   povline = 8.3,
   year_start_fig2 = year_start_fig2,
   year_end_fig2   = year_end_fig2,
-  dta_proj_scen_wide = dta_proj_scen_wide,
+  dta_proj_scen_wide = dta_proj_scen_wide_final,
   dta_proj           = dta_proj
 )
 
