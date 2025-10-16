@@ -458,125 +458,22 @@ write_csv(dta_fig_13_final, "csv/chartbook_F13.csv")
 
 # ---- F14 - Income levels in the world have grown between 1990 ------
 
-# 1. Merge with income group data
-dta_fig_14 <- dta_inc_dist %>%
-  left_join(dta_class_inc, by = "country_code")  %>%
-  filter(year == year_fig14) %>%
-  rename(code = country_code, 
-         pop = population, 
-         povertyline = poverty_line, 
-         pov = headcount, 
-         incgroup = inc_grp) %>%
-  select(code, year, pop, povertyline, pov, incgroup)
-
-# 2. Compute total poor and collapse by group
-povincgroup <- dta_fig_14 %>%
-  mutate(poor = pov * pop) %>%
-  summarise(
-    poor = sum(poor, na.rm = TRUE),
-    pop = sum(pop, na.rm = TRUE),
-    .by = c(incgroup, year, povertyline)
-  )
-
-# 3. Compute incremental poor
-povincgroup <- povincgroup %>%
-  group_by(year, incgroup) %>%
-  arrange(povertyline, .by_group = TRUE) %>%
-  mutate(
-    poorincremental = poor - lag(poor, default = 0),
-    poorincremental = if_else(is.na(poorincremental) | poorincremental < 0, poor, poorincremental)
-  ) %>%
-  ungroup()
-
-# 4. Compute global population and poor shares
-povincgroup <- povincgroup %>%
-  group_by(year, povertyline) %>%
-  mutate(pop_global = sum(pop, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(poorshare = (poorincremental / pop_global))
-
-# 5. Keep relevant variables and reshape wide
-dta_fig_14_final <- povincgroup %>%
-  select(year, povertyline, incgroup, poorshare) %>%
-  pivot_wider(
-    names_from = incgroup,
-    values_from = poorshare
-  ) 
-
-# 6. Create cumulative variables for stacked chart
-dta_fig_14_final_v2 <- dta_fig_14_final %>%
-  mutate(
-    `Low-income` = `Low income`,
-    `Lower-middle-income` = `Low-income` + `Lower middle income`,
-    `Upper-middle-income` = `Lower-middle-income` + `Upper middle income`,
-    `High-income` = `Upper-middle-income` + `High income`
-  ) %>%
-  rename("poverty line in 2021 PPP US$ (per capita per day)" = povertyline) %>%
-  select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, 
-         "poverty line in 2021 PPP US$ (per capita per day)")
-
+dta_fig_14_final_v2 <- build_fig14_15(
+  dta_inc_dist   = dta_inc_dist,
+  dta_class_inc  = dta_class_inc,
+  target_year    = year_fig14   # e.g., 1990
+)
 
 write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
 
 
 # ---- F15 - Income levels in the world have grown 2024 ------
 
-# 1. Merge with income group data
-dta_fig_15 <- dta_inc_dist %>%
-  left_join(dta_class_inc, by = "country_code")  %>%
-  filter(year == year_fig15) %>%
-  rename(code = country_code, 
-         pop = population, 
-         povertyline = poverty_line, 
-         pov = headcount, 
-         incgroup = inc_grp) %>%
-  select(code, year, pop, povertyline, pov, incgroup)
-
-# 2. Compute total poor and collapse by group
-povincgroup <- dta_fig_15 %>%
-  mutate(poor = pov * pop) %>%
-  summarise(
-    poor = sum(poor, na.rm = TRUE),
-    pop = sum(pop, na.rm = TRUE),
-    .by = c(incgroup, year, povertyline)
-  )
-
-# 3. Compute incremental poor
-povincgroup <- povincgroup %>%
-  group_by(year, incgroup) %>%
-  arrange(povertyline, .by_group = TRUE) %>%
-  mutate(
-    poorincremental = poor - lag(poor, default = 0),
-    poorincremental = if_else(is.na(poorincremental) | poorincremental < 0, poor, poorincremental)
-  ) %>%
-  ungroup()
-
-# 4. Compute global population and poor shares
-povincgroup <- povincgroup %>%
-  group_by(year, povertyline) %>%
-  mutate(pop_global = sum(pop, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(poorshare = (poorincremental / pop_global))
-
-# 5. Keep relevant variables and reshape wide
-dta_fig_15_final <- povincgroup %>%
-  select(year, povertyline, incgroup, poorshare) %>%
-  pivot_wider(
-    names_from = incgroup,
-    values_from = poorshare
-  ) 
-
-# 6. Create cumulative variables for stacked chart
-dta_fig_15_final_v2 <- dta_fig_15_final %>%
-  mutate(
-    `Low-income` = `Low income`,
-    `Lower-middle-income` = `Low-income` + `Lower middle income`,
-    `Upper-middle-income` = `Lower-middle-income` + `Upper middle income`,
-    `High-income` = `Upper-middle-income` + `High income`
-  ) %>%
-  rename("poverty line in 2021 PPP US$ (per capita per day)" = povertyline) %>%
-  select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, 
-         "poverty line in 2021 PPP US$ (per capita per day)")
+dta_fig_15_final_v2 <- build_fig14_15(
+  dta_inc_dist   = dta_inc_dist,
+  dta_class_inc  = dta_class_inc,
+  target_year    = year_fig15   # e.g., 2024
+)
 
 write_csv(dta_fig_15_final_v2, "csv/chartbook_F15.csv")
 

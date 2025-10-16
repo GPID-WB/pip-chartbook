@@ -938,5 +938,70 @@ build_fig12_13 <- function(WDI_Gini, countrycodes_current) {
 }
 
 
+# Builder for Figure 14 & 15
+
+build_fig14_15 <- function(dta_inc_dist, dta_class_inc, target_year) {
+  
+  # 1) Merge with income group data and keep target year
+  dta_base <- dta_inc_dist %>%
+    left_join(dta_class_inc, by = "country_code") %>%
+    filter(year == target_year) %>%
+    rename(code = country_code,
+           pop = population,
+           povertyline = poverty_line,
+           pov = headcount,
+           incgroup = inc_grp) %>%
+    select(code, year, pop, povertyline, pov, incgroup)
+  
+  # 2) Total poor and collapse by group-povertyline-year
+  povincgroup <- dta_base %>%
+    mutate(poor = pov * pop) %>%
+    summarise(
+      poor = sum(poor, na.rm = TRUE),
+      pop  = sum(pop,  na.rm = TRUE),
+      .by  = c(incgroup, year, povertyline)
+    )
+  
+  # 3) Incremental poor (marginal between adjacent poverty lines)
+  povincgroup <- povincgroup %>%
+    group_by(year, incgroup) %>%
+    arrange(povertyline, .by_group = TRUE) %>%
+    mutate(
+      poorincremental = poor - lag(poor, default = 0),
+      poorincremental = if_else(is.na(poorincremental) | poorincremental < 0,
+                                poor, poorincremental)
+    ) %>%
+    ungroup()
+  
+  # 4) Global population by poverty line and shares
+  povincgroup <- povincgroup %>%
+    group_by(year, povertyline) %>%
+    mutate(pop_global = sum(pop, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(poorshare = poorincremental / pop_global)
+  
+  # 5) Wide: columns are income groups
+  dta_final <- povincgroup %>%
+    select(year, povertyline, incgroup, poorshare) %>%
+    pivot_wider(names_from = incgroup, values_from = poorshare)
+  
+  # 6) Cumulative series for stacked area chart
+  dta_final_v2 <- dta_final %>%
+    mutate(
+      `Low-income`           = `Low income`,
+      `Lower-middle-income`  = `Low-income` + `Lower middle income`,
+      `Upper-middle-income`  = `Lower-middle-income` + `Upper middle income`,
+      `High-income`          = `Upper-middle-income` + `High income`
+    ) %>%
+    rename("poverty line in 2021 PPP US$ (per capita per day)" = povertyline) %>%
+    select(year,
+           `Low-income`, `Lower-middle-income`,
+           `Upper-middle-income`, `High-income`,
+           "poverty line in 2021 PPP US$ (per capita per day)")
+  
+  # Return only the final table
+  return(dta_final_v2)
+}
+
 
 
