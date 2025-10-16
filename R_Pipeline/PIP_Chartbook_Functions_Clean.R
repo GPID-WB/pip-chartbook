@@ -151,14 +151,14 @@ clean_to_numeric <- function(x) {
 
 # ------- Section #2. Figure-Specific Helpers ---------
 
-# Builder for Figure 1
+# Builder for Figure 1 & 2
 
 # Inputs:
 #   dta_proj, dta_pip: long frames with region_name, year, poverty_line, headcount, pop_in_poverty, estimate_type
 #   pov_lines: numeric vector, e.g. c(3.0, 4.2, 8.3)
 #   year_start_fig1: first year to keep in output
 #   line3pct, millions3pct2030: scalars to append as columns
-build_fig1 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, millions3pct2030) {
+build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, millions3pct2030) {
   
   pov_lines_fmt <- format(pov_lines, nsmall = 1, trim = TRUE)  # "3.0" "4.2" "8.3"
   
@@ -249,7 +249,7 @@ build_fig1 <- function(dta_proj, dta_pip, pov_lines, year_start_fig1, line3pct, 
 # Builder for Figure 3
 
 build_fig3 <- function(dta_fig_3,
-                       year_start_fig1 = 1990,
+                       year_start_fig3 = 1990,
                        bridge_year = 2024,
                        regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD"),
                        regions_name = c(
@@ -274,7 +274,7 @@ build_fig3 <- function(dta_fig_3,
   
   # ---- STEP 1. Filter, recode, prepare
   dta_long <- dta_fig_3 %>%
-    dplyr::filter(region_code %in% regions, year >= year_start_fig1) %>%
+    dplyr::filter(region_code %in% regions, year >= year_start_fig3) %>%
     dplyr::mutate(
       hc = headcount * 100,
       estimate_type = dplyr::case_when(
@@ -455,6 +455,84 @@ build_fig4_5 <- function(povline,
   
   out
 }
+
+# Builder for Figure 6 
+
+build_fig6 <- function(dta_class,
+                       dta_pip_ctry,
+                       year_start_fig6,
+                       year_end_fig6) {
+
+  # ---- 2) Combine with pip data
+  dta_fig_6 <- left_join(dta_pip_ctry, dta_class_inc,
+                         by = "country_code") %>%
+    select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
+    filter(year >= year_start_fig6 &
+             year <= year_end_fig6)
+  
+  # ---- 3) Split different poverty line (only first two)
+  dta_fig_6a <- dta_fig_6 %>%
+    filter(poverty_line == 3.0)
+  
+  # ---- 4) Transformation
+  dta_fig_6a_final <- dta_fig_6a %>%
+    group_by(inc_grp, year) %>%
+    summarise(
+      headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
+    ) %>%
+    group_by(inc_grp) %>%
+    mutate(
+      headcount_ref = headcount_group[year == year_start_fig6],
+      headcount_diff = headcount_group / headcount_ref
+    ) %>%
+    # Standardize group labels to match desired output
+    mutate(
+      inc_grp = recode(inc_grp,
+                       "Low income" = "Low-income",
+                       "Lower middle income" = "Lower-middle-income",
+                       "Upper middle income" = "Upper-middle-income",
+                       "High income" = "High-income")
+    ) %>%
+    select(year, inc_grp, headcount_diff) %>%
+    pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
+    mutate("Poverty Line" = "$3.00 (2021PPP)") %>%
+    select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
+    mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
+  
+  # ---- $8.3 poverty line
+  dta_fig_6b <- dta_fig_6 %>%
+    filter(poverty_line == 8.3)
+  
+  dta_fig_6b_final <- dta_fig_6b %>%
+    group_by(inc_grp, year) %>%
+    summarise(
+      headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
+    ) %>%
+    group_by(inc_grp) %>%
+    mutate(
+      headcount_ref = headcount_group[year == year_start_fig6],
+      headcount_diff = headcount_group / headcount_ref
+    ) %>%
+    # Standardize group labels to match desired output
+    mutate(
+      inc_grp = recode(inc_grp,
+                       "Low income" = "Low-income",
+                       "Lower middle income" = "Lower-middle-income",
+                       "Upper middle income" = "Upper-middle-income",
+                       "High income" = "High-income")
+    ) %>%
+    select(year, inc_grp, headcount_diff) %>%
+    pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
+    mutate("Poverty Line" = "$8.30 (2021PPP)") %>%
+    select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
+    mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
+  
+  # ---- Combine 6a and 6b
+  dta_fig_6_final <- bind_rows(dta_fig_6a_final, dta_fig_6b_final)
+  
+  return(dta_fig_6_final)
+}
+
 
 # Builder for Figure 8
 

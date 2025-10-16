@@ -47,6 +47,11 @@ line3pct <- 0
 millions3pct2030 <- 256
 year_start_fig1 <- 1990
 
+# F3 - Poverty rates by region
+# *********
+year_start_fig3 <- year_start_fig1
+year_bridge_fig3 <- 2024
+  
 # F4 & 5 - Projections of poverty until 2050 under different scenarios
 # *********
 year_start_fig4_5 <- 2010
@@ -202,7 +207,7 @@ source("R_Pipeline/PIP_Chartbook_Functions_Clean.R")
 
 # ---- F1 - Poverty Rate forecasted 2030 ----
 
-dta_fig_1 <- build_fig1(
+dta_fig_1_2 <- build_fig1_2(
   dta_proj = dta_proj,
   dta_pip  = dta_pip,
   pov_lines = pov_lines,
@@ -211,7 +216,7 @@ dta_fig_1 <- build_fig1(
   millions3pct2030 = millions3pct2030
 )
 
-dta_fig_1_final <- dta_fig_1$fig1a %>%
+dta_fig_1_final <- dta_fig_1_2$fig1a %>%
   rename("Poverty rate at $3.00" = "Poverty rate at $3.0", 
          "Poverty rate at $4.20" = "Poverty rate at $4.2",
          "Poverty rate at $8.30" = "Poverty rate at $8.3")
@@ -220,7 +225,7 @@ write_csv(dta_fig_1_final, "csv/chartbook_F1.csv")
 
 # ---- F2 - Number of Poor forecasted 2030 ----
 
-dta_fig_2_final <- dta_fig_1$fig1b %>%
+dta_fig_2_final <- dta_fig_1_2$fig1b %>%
   rename("Millions of poor at $3.00" = "Millions of poor at $3.0", 
          "Millions of poor at $4.20" = "Millions of poor at $4.2",
          "Millions of poor at $8.30" = "Millions of poor at $8.3")
@@ -234,8 +239,8 @@ dta_fig_3 <- dta_pip %>%
 
 dta_fig_3_final <- build_fig3(
   dta_fig_3          = dta_fig_3,
-  year_start_fig1    = 1990,   # or your object year_start_fig1
-  bridge_year        = 2024    # keep dotted lines connected for 2024
+  year_start_fig3    = year_start_fig3,   
+  bridge_year        = year_bridge_fig3   
 )
 
 write_csv(dta_fig_3_final, "csv/chartbook_F3.csv")
@@ -304,83 +309,99 @@ write_csv(dta_fig_5_final, "csv/chartbook_F5.csv")
 
 # ---- F6 - Poverty is still above pre-pandemic levels ($3.0 & $8.3) ------
 
-# 1) Combine pip data with income group class 
-# Only use income group
+# # 1) Combine pip data with income group class 
+# # Only use income group
+# dta_class_inc <- dta_class %>%
+#   filter(year_data == max(year_data)) %>%
+#   select(code, incgroup_current) %>%
+#   distinct() %>%
+#   rename(country_code = code, 
+#          inc_grp = incgroup_current)
+# 
+# # 2) Combine with pip data 
+# dta_fig_6 <- left_join(dta_pip_ctry, dta_class_inc, 
+#                         by = "country_code") %>%
+#   select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
+#   filter(year >= year_start_fig6 &
+#            year <= year_end_fig6) 
+# 
+# # 3) Split different poverty line (only first two)
+# dta_fig_6a <- dta_fig_6 %>%
+#   filter(poverty_line == 3.0)
+# 
+# # 4) Transformation
+# 
+# dta_fig_6a_final <- dta_fig_6a %>%
+#   group_by(inc_grp, year) %>%
+#   summarise(
+#     headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
+#   ) %>%
+#   group_by(inc_grp) %>%
+#   mutate(
+#     headcount_ref = headcount_group[year == year_start_fig6],
+#     headcount_diff = headcount_group/headcount_ref
+#   ) %>%
+#   # Standardize group labels to match desired output
+#   mutate(
+#     inc_grp = recode(inc_grp,
+#                      "Low income" = "Low-income",
+#                      "Lower middle income" = "Lower-middle-income",
+#                      "Upper middle income" = "Upper-middle-income",
+#                      "High income" = "High-income")
+#   ) %>%
+#   select(year, inc_grp, headcount_diff) %>%
+#   pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
+#   mutate("Poverty Line" = "$3.00 (2021PPP)") %>%
+#   select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
+#   mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
+# 
+# # $8.3 poverty line
+# 
+# dta_fig_6b <- dta_fig_6 %>%
+#   filter(poverty_line == 8.3)
+# 
+# dta_fig_6b_final <- dta_fig_6b %>%
+#   group_by(inc_grp, year) %>%  
+#   summarise(
+#     headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
+#   ) %>%
+#   group_by(inc_grp) %>%
+#   mutate(
+#     headcount_ref = headcount_group[year == year_start_fig6],      
+#     headcount_diff = headcount_group/headcount_ref                
+#   ) %>%
+#   # Standardize group labels to match desired output
+#   mutate(
+#     inc_grp = recode(inc_grp,
+#                      "Low income" = "Low-income",
+#                      "Lower middle income" = "Lower-middle-income",
+#                      "Upper middle income" = "Upper-middle-income",
+#                      "High income" = "High-income")
+#   ) %>%
+#   select(year, inc_grp, headcount_diff) %>%
+#   pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
+#   mutate("Poverty Line" = "$8.30 (2021PPP)") %>%
+#   select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
+#   mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
+# 
+# # Combine 6a and 6b 
+# dta_fig_6_final <- bind_rows(dta_fig_6a_final, dta_fig_6b_final)
+
+
+# Combine pip data with income group class (only use income group)
 dta_class_inc <- dta_class %>%
   filter(year_data == max(year_data)) %>%
   select(code, incgroup_current) %>%
   distinct() %>%
-  rename(country_code = code, 
+  rename(country_code = code,
          inc_grp = incgroup_current)
 
-# 2) Combine with pip data 
-dta_fig_6 <- left_join(dta_pip_ctry, dta_class_inc, 
-                        by = "country_code") %>%
-  select(country_code, year, inc_grp, pop, poverty_line, headcount, estimate_type) %>%
-  filter(year >= year_start_fig6 &
-           year <= year_end_fig6) 
-
-# 3) Split different poverty line (only first two)
-dta_fig_6a <- dta_fig_6 %>%
-  filter(poverty_line == 3.0)
-
-# 4) Transformation
-
-dta_fig_6a_final <- dta_fig_6a %>%
-  group_by(inc_grp, year) %>%
-  summarise(
-    headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
-  ) %>%
-  group_by(inc_grp) %>%
-  mutate(
-    headcount_ref = headcount_group[year == year_start_fig6],
-    headcount_diff = headcount_group/headcount_ref
-  ) %>%
-  # Standardize group labels to match desired output
-  mutate(
-    inc_grp = recode(inc_grp,
-                     "Low income" = "Low-income",
-                     "Lower middle income" = "Lower-middle-income",
-                     "Upper middle income" = "Upper-middle-income",
-                     "High income" = "High-income")
-  ) %>%
-  select(year, inc_grp, headcount_diff) %>%
-  pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
-  mutate("Poverty Line" = "$3.00 (2021PPP)") %>%
-  select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
-  mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
-
-# $8.3 poverty line
-
-dta_fig_6b <- dta_fig_6 %>%
-  filter(poverty_line == 8.3)
-
-dta_fig_6b_final <- dta_fig_6b %>%
-  group_by(inc_grp, year) %>%  
-  summarise(
-    headcount_group = weighted.mean(headcount, pop, na.rm = TRUE)
-  ) %>%
-  group_by(inc_grp) %>%
-  mutate(
-    headcount_ref = headcount_group[year == year_start_fig6],      
-    headcount_diff = headcount_group/headcount_ref                
-  ) %>%
-  # Standardize group labels to match desired output
-  mutate(
-    inc_grp = recode(inc_grp,
-                     "Low income" = "Low-income",
-                     "Lower middle income" = "Lower-middle-income",
-                     "Upper middle income" = "Upper-middle-income",
-                     "High income" = "High-income")
-  ) %>%
-  select(year, inc_grp, headcount_diff) %>%
-  pivot_wider(names_from = inc_grp, values_from = headcount_diff) %>%
-  mutate("Poverty Line" = "$8.30 (2021PPP)") %>%
-  select("Poverty Line", year, "Low-income", "Lower-middle-income", "Upper-middle-income") %>%
-  mutate(across(-c(year, "Poverty Line"), ~ round(.x, 2)))
-
-# Combine 6a and 6b 
-dta_fig_6_final <- bind_rows(dta_fig_6a_final, dta_fig_6b_final)
+dta_fig_6_final <- build_fig6(
+  dta_class      = dta_class,
+  dta_pip_ctry   = dta_pip_ctry,
+  year_start_fig6 = year_start_fig6,   
+  year_end_fig6   = year_end_fig6     
+)
 
 # Export csv file 
 
@@ -779,6 +800,7 @@ write_csv(dta_fig_16_final_v2, "csv/chartbook_F16.csv")
 
 
 # ---- F17 - Millions of poor lived below the $3.00 per day ------
+regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")
 
 dta_fig_17 <- dta_pip %>%
   filter(region_code %in% regions) %>%
