@@ -149,6 +149,16 @@ clean_to_numeric <- function(x) {
   df
 }
 
+# Helper: latest non-missing value per country (by year desc)
+get_latest_value_2 <- function(df, var) {
+  var <- enquo(var)
+  df %>%
+    arrange(country_code, desc(year)) %>%
+    group_by(country_code) %>%
+    summarise(!!paste0(as_name(var), "_latest") := dplyr::first(na.omit(!!var)),
+              .groups = "drop")
+}
+
 # ------- Section #2. Figure-Specific Helpers ---------
 
 # Builder for Figure 1 & 2
@@ -1014,16 +1024,6 @@ build_fig16 <- function(dta_class,
   require(tidyr)
   require(rlang)
   
-  # ---- Helper: latest non-missing value per country (by year desc)
-  get_latest_value <- function(df, var) {
-    var <- enquo(var)
-    df %>%
-      arrange(country_code, desc(year)) %>%
-      group_by(country_code) %>%
-      summarise(!!paste0(as_name(var), "_latest") := dplyr::first(na.omit(!!var)),
-                .groups = "drop")
-  }
-  
   # dta_fcs
   dta_fcs <- dta_class %>%
     select(code, year_data, fcv)
@@ -1050,8 +1050,8 @@ build_fig16 <- function(dta_class,
     bind_rows(dta_proj_ctry_v2)
   
   # Latest region and fcv definitions for projection years
-  latest_region <- get_latest_value(dta_fig_16, region_code)
-  latest_fcv    <- get_latest_value(dta_fig_16, fcv)
+  latest_region <- get_latest_value_2(dta_fig_16, region_code)
+  latest_fcv    <- get_latest_value_2(dta_fig_16, fcv)
   
   # Combine it back to original dataset
   dta_fig_16_final <- dta_fig_16 %>%
