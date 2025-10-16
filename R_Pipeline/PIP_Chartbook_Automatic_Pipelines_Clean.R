@@ -65,6 +65,14 @@ year_start_fig8 <- 1990
 # *********
 year_end_fig9 <- 2025 
 
+# F14 - Income levels in the world have grown between 1990
+# *********
+year_fig14 <- 1990
+
+# F15 - Income levels in the world have grown between 2025
+# *********
+year_fig15 <- 2025
+
 # F16 - Increased concentration of extreme poverty in Sub-Saharan Africa
 # *********
 year_start_fig16 <- 2000
@@ -241,7 +249,7 @@ regions_name <- c(
 )
 
 dta_fig_3 <- dta_fig_3 %>%
-  filter(region_code %in% regions, year >= 1990) %>%          # keep regions and years
+  filter(region_code %in% regions, year >= year_start_fig1) %>%          # keep regions and years
   mutate(
     hc = headcount * 100,                                     # headcount to percent
     estimate_type = case_when(                                # Stata replace logic
@@ -523,7 +531,7 @@ dta_fig_6a_final <- dta_fig_6a %>%
   ) %>%
   group_by(inc_grp) %>%
   mutate(
-    headcount_ref = headcount_group[year == 2019],
+    headcount_ref = headcount_group[year == year_start_fig6],
     headcount_diff = headcount_group/headcount_ref
   ) %>%
   # Standardize group labels to match desired output
@@ -552,7 +560,7 @@ dta_fig_6b_final <- dta_fig_6b %>%
   ) %>%
   group_by(inc_grp) %>%
   mutate(
-    headcount_ref = headcount_group[year == 2019],      
+    headcount_ref = headcount_group[year == year_start_fig6],      
     headcount_diff = headcount_group/headcount_ref                
   ) %>%
   # Standardize group labels to match desired output
@@ -765,7 +773,7 @@ write_csv(dta_fig_13_final, "csv/chartbook_F13.csv")
 # 1. Merge with income group data
 dta_fig_14 <- dta_inc_dist %>%
   left_join(dta_class_inc, by = "country_code")  %>%
-  filter(year == 1990) %>%
+  filter(year == year_fig14) %>%
   rename(code = country_code, 
          pop = population, 
          povertyline = poverty_line, 
@@ -828,7 +836,7 @@ write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
 # 1. Merge with income group data
 dta_fig_15 <- dta_inc_dist %>%
   left_join(dta_class_inc, by = "country_code")  %>%
-  filter(year == 2025) %>%
+  filter(year == year_fig15) %>%
   rename(code = country_code, 
          pop = population, 
          povertyline = poverty_line, 
