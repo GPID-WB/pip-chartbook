@@ -534,6 +534,36 @@ build_fig6 <- function(dta_class,
 }
 
 
+build_fig7 <- function(dta_pip_ctry, target_year = 2025) {
+  
+  # ---- 1) Select and compute
+  dta_fig_7_final <- dta_pip_ctry %>%
+    select(year, region_name, country_name, headcount, pop, poverty_line) %>%
+    mutate(pop_in_poverty = as.integer((pop * headcount) / 1000000)) %>%
+    group_by(country_name) %>%
+    filter(year == target_year) %>%
+    select(-year) %>%
+    mutate(
+      poverty_line = case_when(
+        round(as.numeric(poverty_line), 1) == 3.0 ~ "$3.00 (2021 PPP)",
+        round(as.numeric(poverty_line), 1) == 4.2 ~ "$4.20 (2021 PPP)",
+        round(as.numeric(poverty_line), 1) == 8.3 ~ "$8.30 (2021 PPP)",
+        TRUE ~ as.character(poverty_line)
+      )
+    ) %>%
+    select(region_name, country_name, pop_in_poverty, poverty_line) %>%
+    rename(
+      "Region"           = region_name,
+      "Country Name"     = country_name,
+      "Millions of poor" = pop_in_poverty,
+      "Poverty Line"     = poverty_line
+    )
+  
+  # ✅ Return only final output
+  return(dta_fig_7_final)
+}
+
+
 # Builder for Figure 8
 
 build_fig8 <- function(df,
@@ -757,8 +787,72 @@ build_fig10 <- function(dta_fig_5,
     mutate(across(-c(year, check_sum), ~ round(.x, 2)))
 }
 
+# Builder for Figure 11
 
-# Builder for Figure 6 
+build_fig11 <- function(dta_pip_ctry_v2) {
+  
+  # ---- 1) Prepare and classify inequality levels
+  dta_fig_11 <- dta_pip_ctry_v2 %>%
+    mutate(
+      gini = gini * 100,
+      Classification = case_when(
+        gini > 40               ~ "High inequality",
+        gini >= 30 & gini <= 40 ~ "Moderate inequality",
+        gini < 30               ~ "Low inequality",
+        TRUE                    ~ NA_character_
+      )
+    ) %>%
+    rename(
+      `Country Name` = country_name,
+      `Region`       = region_name,
+      `Survey year`  = welfare_time,
+      `Gini index`   = gini,
+      `Welfare type` = welfare_type
+    ) %>%
+    mutate(
+      country_name_flourish = recode(
+        `Country Name`,
+        "Slovak Republic"       = "Slovakia",
+        "Czechia"               = "Czech Republic",
+        "Kyrgyz Republic"       = "Kyrgyzstan",
+        "Syrian Arab Republic"  = "Syria",
+        "Egypt, Arab Rep."      = "Egypt",
+        "Korea, Rep."           = "South Korea",
+        "Iran, Islamic Rep."    = "Iran",
+        "Russian Federation"    = "Russia",
+        "Cote d'Ivoire"         = "Ivory Coast",
+        "Viet Nam"              = "Vietnam",
+        "Yemen, Rep."           = "Yemen",
+        "West Bank and Gaza"    = "Palestine",
+        "North Macedonia"       = "Republic of Macedonia",
+        "Turkiye"               = "Turkey",
+        "Micronesia, Fed. Sts." = "Federated States of Micronesia",
+        "Gambia, The"           = "The Gambia",
+        "Lao PDR"               = "Laos",
+        "Cabo Verde"            = "Cape Verde",
+        "Sao Tome and Principe" = "São Tomé and Príncipe",
+        "Congo, Dem. Rep."      = "Democratic Republic of the Congo",
+        "Congo, Rep."           = "Republic of the Congo",
+        "United States"         = "United States of America",
+        .default                = `Country Name`
+      )
+    ) %>%
+    select(country_code, `Country Name`, country_name_flourish,
+           Region, `Survey year`, `Gini index`, `Welfare type`, Classification)
+  
+  # ---- 2) Keep latest survey year per country
+  dta_fig_11_latest <- dta_fig_11 %>%
+    group_by(country_code) %>%
+    filter(`Survey year` == max(`Survey year`, na.rm = TRUE)) %>%
+    ungroup() %>%
+    distinct()
+  
+  # ✅ Return only the final cleaned dataset
+  return(dta_fig_11_latest)
+}
+
+
+# Builder for Figure 12 & 13
 
 # Inputs expected:
 # - WDI_Gini: columns country, iso3c, year, SI.POV.GINI, ...
