@@ -815,6 +815,7 @@ dta_fig_14_final_v2 <- dta_fig_14_final %>%
   select(year, `Low-income`, `Lower-middle-income`, `Upper-middle-income`, `High-income`, 
          "poverty line in 2021 PPP US$ (per capita per day)")
 
+
 write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
 
 
