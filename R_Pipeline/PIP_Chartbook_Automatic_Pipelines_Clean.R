@@ -34,6 +34,8 @@ library(WDI)
 library(purrr)
 library(forcats)
 library(tsibble)
+library(scales)
+library(data.table)
 
 # *****************************
 # ---- Section #2. Inputs ----
@@ -67,6 +69,9 @@ year_start_fig6 <- 2019
 # *********
 year_start_fig16 <- 2000
 
+# F18 - Global Growth Incidence Curve (GIC) using 100-bin percentiles
+# *********
+target_years <- c(1990, 2000, 2010, 2019, 2025)
 
 # ********************************
 # ---- Section #3. Load Data ----
@@ -178,6 +183,7 @@ dta_inc_dist <- read_dta("dta/country_income_distribution.dta") %>%
     headcount = pov
   )
 
+dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.dta")
 
 # ************************************
 # ---- Section #4. Load Functions ----
@@ -478,3 +484,80 @@ regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")
 dta_fig_17 <- build_fig17(dta_pip = dta_pip, regions = regions)
 
 write_csv(dta_fig_17, "csv/chartbook_F17.csv")
+
+
+# ---- F18 - Global Growth Incidence Curve (GIC) using 100-bin percentiles ----
+
+welfare_floor <- 0.25   # Stata: global welf_fl 0.25
+
+# --- 1) Keep target years & apply welfare floor
+df <- dta_1000_bins %>%
+  filter(year %in% target_years) %>%
+  mutate(welf_adj = pmax(welf, welfare_floor))
+
+# --- 2) Assign population-weighted global percentiles within year (n = 100)
+#      This mirrors Stata's: egen perc = xtile(welf_adj), by(year) n(100) weight(pop)
+assign_global_percentiles <- function(x, n = 100) {
+  x %>%
+    arrange(welf_adj, .by_group = FALSE) %>%
+    group_by(year) %>%
+    mutate(
+      w_pop = pop / sum(pop, na.rm = TRUE),
+      cum_w = cumsum(w_pop),
+      perc  = pmin(n, pmax(1L, ceiling(cum_w * n)))  # 1..100
+    ) %>%
+    ungroup() %>%
+    select(-w_pop, -cum_w)
+}
+
+df_pct <- assign_global_percentiles(df, n = 100)
+
+# --- 3) Collapse to (year, perc): weighted mean welfare
+#      Stata: collapse welf_adj [aw=pop], by(year perc)
+df_collapsed <- df_pct %>%
+  group_by(year, perc) %>%
+  summarise(welf_adj = sum(welf_adj * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
+            .groups = "drop")
+
+# --- 4) Reshape wide by year to compute GICs (annualized log growth)
+#      Stata: reshape wide welf_adj, i(perc) j(year)
+wid <- df_collapsed %>%
+  tidyr::pivot_wider(names_from = year, values_from = welf_adj, names_prefix = "w_")
+
+# Safety: ensure columns exist (in case some year is missing after filters)
+needed_cols <- paste0("w_", target_years)
+stopifnot(all(needed_cols %in% names(wid)))
+
+# --- 5) Annualized growth at each percentile (as %)
+#      Stata: ln(w_t2 / w_t1) / (t2 - t1) * 100
+gic <- wid %>%
+  mutate(
+    gwelf1990_2000 = log(w_2000 / w_1990) / (2000 - 1990) * 100,
+    gwelf1990_2010 = log(w_2010 / w_1990) / (2010 - 1990) * 100,
+    gwelf1990_2019 = log(w_2019 / w_1990) / (2019 - 1990) * 100,
+    gwelf1990_2025 = log(w_2025 / w_1990) / (2025 - 1990) * 100,
+
+    gwelf2000_2010 = log(w_2010 / w_2000) / (2010 - 2000) * 100,
+    gwelf2010_2019 = log(w_2019 / w_2010) / (2019 - 2010) * 100,
+    gwelf2019_2025 = log(w_2025 / w_2019) / (2025 - 2019) * 100, 
+
+  ) %>%
+  # Hide P1 and P100 like Stata:
+  mutate(across(starts_with("gwelf"),
+                ~ ifelse(perc %in% c(1L, 100L), NA_real_, .)))
+
+# --- 6) Long format for plotting
+dta_fig_18_final <- gic %>%
+  select(perc, starts_with("gwelf")) %>%
+  rename(
+    "GIC 1990–2000" = gwelf1990_2000,
+    "GIC 1990–2010" = gwelf1990_2010,
+    "GIC 1990–2019" = gwelf1990_2019,
+    "GIC 1990–2025" = gwelf1990_2025, 
+
+    "GIC 2000–2010" = gwelf2000_2010,
+    "GIC 2010–2019" = gwelf2010_2019,
+    "GIC 2019–2025" = gwelf2019_2025
+  ) 
+
+write_csv(dta_fig_18_final, "csv/chartbook_F18.csv")
