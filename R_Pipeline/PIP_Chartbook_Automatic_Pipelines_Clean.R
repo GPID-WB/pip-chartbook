@@ -495,69 +495,73 @@ df <- dta_1000_bins %>%
   filter(year %in% target_years) %>%
   mutate(welf_adj = pmax(welf, welfare_floor))
 
-# --- 2) Assign population-weighted global percentiles within year (n = 100)
-#      This mirrors Stata's: egen perc = xtile(welf_adj), by(year) n(100) weight(pop)
-assign_global_percentiles <- function(x, n = 100) {
-  x %>%
-    arrange(welf_adj, .by_group = FALSE) %>%
-    group_by(year) %>%
-    mutate(
-      w_pop = pop / sum(pop, na.rm = TRUE),
-      cum_w = cumsum(w_pop),
-      perc  = pmin(n, pmax(1L, ceiling(cum_w * n)))  # 1..100
-    ) %>%
-    ungroup() %>%
-    select(-w_pop, -cum_w)
-}
+out <- build_fig18(df, target_years = target_years, n = 100)
+dta_fig_18_final <- out$dta_fig_18_final
 
-df_pct <- assign_global_percentiles(df, n = 100)
 
-# --- 3) Collapse to (year, perc): weighted mean welfare
-#      Stata: collapse welf_adj [aw=pop], by(year perc)
-df_collapsed <- df_pct %>%
-  group_by(year, perc) %>%
-  summarise(welf_adj = sum(welf_adj * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
-            .groups = "drop")
+# # --- 2) Assign population-weighted global percentiles within year (n = 100)
+# #      This mirrors Stata's: egen perc = xtile(welf_adj), by(year) n(100) weight(pop)
+# assign_global_percentiles <- function(x, n = 100) {
+#   x %>%
+#     arrange(welf_adj, .by_group = FALSE) %>%
+#     group_by(year) %>%
+#     mutate(
+#       w_pop = pop / sum(pop, na.rm = TRUE),
+#       cum_w = cumsum(w_pop),
+#       perc  = pmin(n, pmax(1L, ceiling(cum_w * n)))  # 1..100
+#     ) %>%
+#     ungroup() %>%
+#     select(-w_pop, -cum_w)
+# }
 
-# --- 4) Reshape wide by year to compute GICs (annualized log growth)
-#      Stata: reshape wide welf_adj, i(perc) j(year)
-wid <- df_collapsed %>%
-  tidyr::pivot_wider(names_from = year, values_from = welf_adj, names_prefix = "w_")
+# df_pct <- assign_global_percentiles(df, n = 100)
 
-# Safety: ensure columns exist (in case some year is missing after filters)
-needed_cols <- paste0("w_", target_years)
-stopifnot(all(needed_cols %in% names(wid)))
+# # --- 3) Collapse to (year, perc): weighted mean welfare
+# #      Stata: collapse welf_adj [aw=pop], by(year perc)
+# df_collapsed <- df_pct %>%
+#   group_by(year, perc) %>%
+#   summarise(welf_adj = sum(welf_adj * pop, na.rm = TRUE) / sum(pop, na.rm = TRUE),
+#             .groups = "drop")
 
-# --- 5) Annualized growth at each percentile (as %)
-#      Stata: ln(w_t2 / w_t1) / (t2 - t1) * 100
-gic <- wid %>%
-  mutate(
-    gwelf1990_2000 = log(w_2000 / w_1990) / (2000 - 1990) * 100,
-    gwelf1990_2010 = log(w_2010 / w_1990) / (2010 - 1990) * 100,
-    gwelf1990_2019 = log(w_2019 / w_1990) / (2019 - 1990) * 100,
-    gwelf1990_2025 = log(w_2025 / w_1990) / (2025 - 1990) * 100,
+# # --- 4) Reshape wide by year to compute GICs (annualized log growth)
+# #      Stata: reshape wide welf_adj, i(perc) j(year)
+# wid <- df_collapsed %>%
+#   tidyr::pivot_wider(names_from = year, values_from = welf_adj, names_prefix = "w_")
 
-    gwelf2000_2010 = log(w_2010 / w_2000) / (2010 - 2000) * 100,
-    gwelf2010_2019 = log(w_2019 / w_2010) / (2019 - 2010) * 100,
-    gwelf2019_2025 = log(w_2025 / w_2019) / (2025 - 2019) * 100, 
+# # Safety: ensure columns exist (in case some year is missing after filters)
+# needed_cols <- paste0("w_", target_years)
+# stopifnot(all(needed_cols %in% names(wid)))
 
-  ) %>%
-  # Hide P1 and P100 like Stata:
-  mutate(across(starts_with("gwelf"),
-                ~ ifelse(perc %in% c(1L, 100L), NA_real_, .)))
+# # --- 5) Annualized growth at each percentile (as %)
+# #      Stata: ln(w_t2 / w_t1) / (t2 - t1) * 100
+# gic <- wid %>%
+#   mutate(
+#     gwelf1990_2000 = log(w_2000 / w_1990) / (2000 - 1990) * 100,
+#     gwelf1990_2010 = log(w_2010 / w_1990) / (2010 - 1990) * 100,
+#     gwelf1990_2019 = log(w_2019 / w_1990) / (2019 - 1990) * 100,
+#     gwelf1990_2025 = log(w_2025 / w_1990) / (2025 - 1990) * 100,
 
-# --- 6) Long format for plotting
-dta_fig_18_final <- gic %>%
-  select(perc, starts_with("gwelf")) %>%
-  rename(
-    "GIC 1990–2000" = gwelf1990_2000,
-    "GIC 1990–2010" = gwelf1990_2010,
-    "GIC 1990–2019" = gwelf1990_2019,
-    "GIC 1990–2025" = gwelf1990_2025, 
+#     gwelf2000_2010 = log(w_2010 / w_2000) / (2010 - 2000) * 100,
+#     gwelf2010_2019 = log(w_2019 / w_2010) / (2019 - 2010) * 100,
+#     gwelf2019_2025 = log(w_2025 / w_2019) / (2025 - 2019) * 100, 
 
-    "GIC 2000–2010" = gwelf2000_2010,
-    "GIC 2010–2019" = gwelf2010_2019,
-    "GIC 2019–2025" = gwelf2019_2025
-  ) 
+#   ) %>%
+#   # Hide P1 and P100 like Stata:
+#   mutate(across(starts_with("gwelf"),
+#                 ~ ifelse(perc %in% c(1L, 100L), NA_real_, .)))
+
+# # --- 6) Long format for plotting
+# dta_fig_18_final <- gic %>%
+#   select(perc, starts_with("gwelf")) %>%
+#   rename(
+#     "GIC 1990–2000" = gwelf1990_2000,
+#     "GIC 1990–2010" = gwelf1990_2010,
+#     "GIC 1990–2019" = gwelf1990_2019,
+#     "GIC 1990–2025" = gwelf1990_2025, 
+
+#     "GIC 2000–2010" = gwelf2000_2010,
+#     "GIC 2010–2019" = gwelf2010_2019,
+#     "GIC 2019–2025" = gwelf2019_2025
+#   ) 
 
 write_csv(dta_fig_18_final, "csv/chartbook_F18.csv")
