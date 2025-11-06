@@ -36,6 +36,7 @@ library(forcats)
 library(tsibble)
 library(scales)
 library(data.table)
+library(tidyverse)
 
 # *****************************
 # ---- Section #2. Inputs ----
@@ -71,7 +72,7 @@ year_start_fig16 <- 2000
 
 # F18 - Global Growth Incidence Curve (GIC) using 100-bin percentiles
 # *********
-target_years <- c(1990, 2000, 2010, 2019, 2025)
+target_years <- c(1990, 2000, 2008, 2010, 2019, 2025)
 
 # ********************************
 # ---- Section #3. Load Data ----
@@ -183,7 +184,9 @@ dta_inc_dist <- read_dta("dta/country_income_distribution.dta") %>%
     headcount = pov
   )
 
-dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.dta")
+# dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.dta")
+
+dta_1000_bins <- readr::read_csv("https://datacatalogfiles.worldbank.org/ddh-published/0064304/DR0094423/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.csv")
 
 # ************************************
 # ---- Section #4. Load Functions ----
@@ -496,6 +499,8 @@ df <- dta_1000_bins %>%
   mutate(welf_adj = pmax(welf, welfare_floor))
 
 out <- build_fig18(df, target_years = target_years, n = 100)
+
 dta_fig_18_final <- out$dta_fig_18_final
+
 
 write_csv(dta_fig_18_final, "csv/chartbook_F18.csv")

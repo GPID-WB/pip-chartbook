@@ -1156,7 +1156,7 @@ build_fig17 <- function(dta_pip, regions) {
 
 # Builder for Figure 18
 
-build_fig18 <- function(df, target_years = c(1990, 2000, 2010, 2019, 2025), n = 100) {
+build_fig18 <- function(df, target_years = target_years, n = 100) {
 
   # --- 2) Assign population-weighted global percentiles within year (n = 100)
   #      This mirrors Stata's: egen perc = xtile(welf_adj), by(year) n(100) weight(pop)
@@ -1196,6 +1196,7 @@ build_fig18 <- function(df, target_years = c(1990, 2000, 2010, 2019, 2025), n = 
   gic <- wid %>%
     mutate(
       gwelf1990_2000 = log(w_2000 / w_1990) / (2000 - 1990) * 100,
+      gwelf1990_2008 = log(w_2008 / w_1990) / (2008 - 1990) * 100,
       gwelf1990_2010 = log(w_2010 / w_1990) / (2010 - 1990) * 100,
       gwelf1990_2019 = log(w_2019 / w_1990) / (2019 - 1990) * 100,
       gwelf1990_2025 = log(w_2025 / w_1990) / (2025 - 1990) * 100,
@@ -1213,6 +1214,7 @@ build_fig18 <- function(df, target_years = c(1990, 2000, 2010, 2019, 2025), n = 
     select(perc, starts_with("gwelf")) %>%
     rename(
       "GIC 1990–2000" = gwelf1990_2000,
+      "GIC 1990–2008" = gwelf1990_2008,
       "GIC 1990–2010" = gwelf1990_2010,
       "GIC 1990–2019" = gwelf1990_2019,
       "GIC 1990–2025" = gwelf1990_2025, 
