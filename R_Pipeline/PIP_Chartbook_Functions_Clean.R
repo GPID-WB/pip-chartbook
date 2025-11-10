@@ -1213,15 +1213,15 @@ build_fig18 <- function(df, target_years = target_years, n = 100) {
   dta_fig_18_final <- gic %>%
     select(perc, starts_with("gwelf")) %>%
     rename(
-      "GIC 1990–2000" = gwelf1990_2000,
-      "GIC 1990–2008" = gwelf1990_2008,
-      "GIC 1990–2010" = gwelf1990_2010,
-      "GIC 1990–2019" = gwelf1990_2019,
-      "GIC 1990–2025" = gwelf1990_2025, 
+      "1990–2000" = gwelf1990_2000,
+      "1990–2008" = gwelf1990_2008,
+      "1990–2010" = gwelf1990_2010,
+      "1990–2019" = gwelf1990_2019,
+      "1990–2025" = gwelf1990_2025, 
 
-      "GIC 2000–2010" = gwelf2000_2010,
-      "GIC 2010–2019" = gwelf2010_2019,
-      "GIC 2019–2025" = gwelf2019_2025
+      "2000–2010" = gwelf2000_2010,
+      "2010–2019" = gwelf2010_2019,
+      "2019–2025" = gwelf2019_2025
     )
 
   # Return everything in case you want to inspect intermediate objects
