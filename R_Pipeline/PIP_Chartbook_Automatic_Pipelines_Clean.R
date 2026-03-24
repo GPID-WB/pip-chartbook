@@ -72,7 +72,7 @@ year_start_fig16 <- 2000
 
 # F18 - Global Growth Incidence Curve (GIC) using 100-bin percentiles
 # *********
-target_years <- c(1990, 2000, 2008, 2010, 2019, 2025)
+target_years <- c(1990, 2000, 2008, 2010, 2019, 2026)
 
 # ********************************
 # ---- Section #3. Load Data ----
@@ -393,7 +393,7 @@ dta_fig_10 <- dta_pip_ctry %>%
   select(country_code, year, mean, gini, pop, pg)
 
 dta_fig_10_final <- build_fig10(dta_fig_10,
-                                last_label_override = "2019–2025 (projected)") %>%
+                                last_label_override = "2019–2026 (projected)") %>%
   select(-check_sum)
 
 write_csv(dta_fig_10_final, "csv/chartbook_F10.csv")
@@ -458,7 +458,7 @@ dta_fig_14_final_v2 <- build_fig14_15(
 write_csv(dta_fig_14_final_v2, "csv/chartbook_F14.csv")
 
 
-# ---- F15 - Income levels in the world have grown 2024 ------
+# ---- F15 - Income levels in the world have grown 2026 ------
 
 dta_fig_15_final_v2 <- build_fig14_15(
   dta_inc_dist   = dta_inc_dist,
