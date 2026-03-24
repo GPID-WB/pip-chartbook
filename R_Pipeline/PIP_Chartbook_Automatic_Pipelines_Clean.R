@@ -5,7 +5,7 @@
 ## Author: Martha Celmira Viveros Mendoza,         ###
 ##         Kayley Ashlynn Watson, Jing Xie,        ###
 ##         Christoph Lakner, Nishant Yonzan        ###
-## Latest Updates: Oct 16th, 2025                  ### 
+## Latest Updates: March 24th, 2026                ### 
 ## ***************************************************
 
 ## Objective of this workbook is to create a live 
@@ -46,7 +46,7 @@ pov_lines <- c(3.0, 4.2, 8.3)
 
 # If not specify, we will use general start and end year
 general_year_start <- 1990 
-general_year_end <- 2025 
+general_year_end <- 2026 
 
 # F1 & 2 - Poverty Rate and Millions of Poor forecasted 2030
 # *********
@@ -89,7 +89,7 @@ dta_pip <- get_wb(
   api_version = "v1",
   format = c("rds", "json", "csv"),
   simplify = TRUE,
-  server = NULL
+  server = "qa"
 )
 
 dta_pip_ctry <- get_stats(
@@ -97,14 +97,16 @@ dta_pip_ctry <- get_stats(
   year = "all", 
   reporting_level = "national", 
   povline = pov_lines,
-  nowcast = TRUE
+  nowcast = TRUE,
+  server = "qa"
 )
 
 dta_pip_ctry_v2 <- get_stats(
   country = "all", 
   year = "all", 
   reporting_level = "national", 
-  povline = "3.0"
+  povline = "3.0",
+  server = "qa"
 )
 
 # Fetch all national + subnational data first
@@ -112,7 +114,8 @@ dta_pip_ctry_v2 <- get_stats(
   country = "all",
   year = "all",
   reporting_level = "all",   # include all levels
-  povline = pov_lines
+  povline = pov_lines,
+  server = "qa"
 ) %>%
   dplyr::filter(
     # keep national for all except Argentina

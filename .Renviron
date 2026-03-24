@@ -1,0 +1,7 @@
+
+# PIPR
+
+PIP_QA_URL=https://apiv2qa.worldbank.org/pip
+
+PIP_DEV_URL=http://wzlxdpip01.worldbank.org/api
+ 
