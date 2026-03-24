@@ -55,7 +55,7 @@ millions3pct2030 <- 256
 
 # F3 - Poverty rates by region
 # *********
-year_bridge_fig3 <- 2024
+year_bridge_fig3 <- 2025
   
 # F4 & 5 - Projections of poverty until 2050 under different scenarios
 # *********
