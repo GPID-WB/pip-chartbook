@@ -310,15 +310,43 @@ build_fig3 <- function(dta_fig_3,
     }
   }
   
-  # ---- STEP 4. Additional gap fills (adjust every year as needed)
-  # dta_wide <- dta_wide %>%
-  #   dplyr::mutate(
-  #     WLD_proj = dplyr::if_else(year %in% c("2018","2020"),                               WLD_obs, WLD_proj),
-  #     MEA_proj = dplyr::if_else(year %in% c("2001","2003"),                               MEA_obs, MEA_proj),
-  #     SAS_proj = dplyr::if_else(year %in% c("1996","2002","2014","2020"),                 SAS_obs, SAS_proj),
-  #     AFE_proj = dplyr::if_else(year %in% c("1993","1996","1998","2018","2020","2023"),   AFE_obs, AFE_proj),
-  #     AFW_proj = dplyr::if_else(year %in% c("1999","2001","2006","2008"),                 AFW_obs, AFW_proj)
-  #   )
+  # ---- STEP 4. Fill one row before and one row after every projection block
+  # (so dotted lines connect smoothly to the observed series)
+  dta_wide$year <- as.integer(dta_wide$year)
+  dta_wide <- dplyr::arrange(dta_wide, poverty_line, year)
+  
+  proj_cols <- grep("_proj$", names(dta_wide), value = TRUE)
+  grp_idx   <- split(seq_len(nrow(dta_wide)), dta_wide$poverty_line)
+  
+  for (col in proj_cols) {
+    obs_col <- sub("_proj$", "_obs", col)
+    if (!obs_col %in% names(dta_wide)) next
+    
+    for (rows in grp_idx) {
+      proj <- dta_wide[rows, col][[1]]
+      obs  <- dta_wide[rows, obs_col][[1]]
+      
+      proj_idx <- which(!is.na(proj))
+      if (length(proj_idx) == 0L) next
+      
+      # identify contiguous blocks
+      cut_points  <- c(1L, which(diff(proj_idx) > 1L) + 1L)
+      block_start <- proj_idx[cut_points]
+      block_end   <- proj_idx[c(cut_points[-1] - 1L, length(proj_idx))]
+      
+      for (b in seq_along(block_start)) {
+        s <- block_start[b]; e <- block_end[b]
+        # one row before the block
+        if (s > 1L && !is.na(obs[s - 1L])) proj[s - 1L] <- obs[s - 1L]
+        # one row after the block — only for non-final blocks
+        if (b < length(block_start) && e < length(proj) && !is.na(obs[e + 1L])) proj[e + 1L] <- obs[e + 1L]
+      }
+      
+      dta_wide[rows, col] <- proj
+    }
+  }
+  
+  dta_wide$year <- as.character(dta_wide$year)
   
   # ---- STEP 5. Column order
   col_order <- c(
