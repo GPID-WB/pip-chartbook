@@ -3,8 +3,8 @@ AGO,Angola,Angola,Sub-Saharan Africa,2018.17,51.2642889911,consumption,High ineq
 ALB,Albania,Albania,Europe & Central Asia,2020,29.419629817100002,consumption,Low inequality
 ARE,United Arab Emirates,United Arab Emirates,"Middle East, North Africa, Afghanistan & Pakistan",2018,26.3990043944,income,Low inequality
 ARG,Argentina,Argentina,Latin America & Caribbean,2024,42.3533182338,income,High inequality
-ARM,Armenia,Armenia,Europe & Central Asia,2023,27.154651387399998,consumption,Low inequality
-AUS,Australia,Australia,East Asia & Pacific,2020,33.829019172,income,Moderate inequality
+ARM,Armenia,Armenia,Europe & Central Asia,2024,27.4448057018,consumption,Low inequality
+AUS,Australia,Australia,East Asia & Pacific,2020,33.8300486675,income,Moderate inequality
 AUT,Austria,Austria,Europe & Central Asia,2023,31.2046801955,income,Moderate inequality
 AZE,Azerbaijan,Azerbaijan,Europe & Central Asia,2005,26.554907705,consumption,Low inequality
 BDI,Burundi,Burundi,Sub-Saharan Africa,2020.15,37.4560848246,consumption,Moderate inequality
@@ -13,35 +13,35 @@ BEN,Benin,Benin,Sub-Saharan Africa,2021.75,34.3958073714,consumption,Moderate in
 BFA,Burkina Faso,Burkina Faso,Sub-Saharan Africa,2021.67,37.391286077000004,consumption,Moderate inequality
 BGD,Bangladesh,Bangladesh,South Asia,2022,30.930253917599998,consumption,Moderate inequality
 BGR,Bulgaria,Bulgaria,Europe & Central Asia,2023,39.4705346671,income,Moderate inequality
-BIH,Bosnia and Herzegovina,Bosnia and Herzegovina,Europe & Central Asia,2011,33.030185869899995,consumption,Moderate inequality
+BIH,Bosnia and Herzegovina,Bosnia and Herzegovina,Europe & Central Asia,2021,30.310099236299997,consumption,Moderate inequality
 BLR,Belarus,Belarus,Europe & Central Asia,2020,24.383355244300002,consumption,Low inequality
 BLZ,Belize,Belize,Latin America & Caribbean,2018.2,39.9495853882,consumption,Moderate inequality
-BOL,Bolivia,Bolivia,Latin America & Caribbean,2023,42.050114717199996,income,High inequality
-BRA,Brazil,Brazil,Latin America & Caribbean,2023,51.639437633499995,income,High inequality
+BOL,Bolivia,Bolivia,Latin America & Caribbean,2024,40.8683252069,income,High inequality
+BRA,Brazil,Brazil,Latin America & Caribbean,2024,50.2581211667,income,High inequality
 BRB,Barbados,Barbados,Latin America & Caribbean,2016,34.068036279000005,consumption,Moderate inequality
-BTN,Bhutan,Bhutan,South Asia,2022,28.4599218514,consumption,Low inequality
+BTN,Bhutan,Bhutan,South Asia,2022,28.453521667100002,consumption,Low inequality
 BWA,Botswana,Botswana,Sub-Saharan Africa,2015.85,54.9073596778,consumption,High inequality
 CAF,Central African Republic,Central African Republic,Sub-Saharan Africa,2021,43.0344590196,consumption,High inequality
-CAN,Canada,Canada,North America,2021,31.114634007000003,income,Moderate inequality
+CAN,Canada,Canada,North America,2022,31.4952140859,income,Moderate inequality
 CHE,Switzerland,Switzerland,Europe & Central Asia,2022,33.7951766631,income,Moderate inequality
-CHL,Chile,Chile,Latin America & Caribbean,2022,43.0427808354,income,High inequality
-CHN,China,China,East Asia & Pacific,2022,36.0195142788,consumption,Moderate inequality
+CHL,Chile,Chile,Latin America & Caribbean,2024,43.0230358486,income,High inequality
+CHN,China,China,East Asia & Pacific,2022,36.0195142774,consumption,Moderate inequality
 CIV,Côte d'Ivoire,Côte d'Ivoire,Sub-Saharan Africa,2021.75,35.2753624351,consumption,Moderate inequality
 CMR,Cameroon,Cameroon,Sub-Saharan Africa,2021.67,42.176072455399996,consumption,High inequality
 COD,"Congo, Dem. Rep.",Democratic Republic of the Congo,Sub-Saharan Africa,2020,44.6732410079,consumption,High inequality
 COG,"Congo, Rep.",Republic of the Congo,Sub-Saharan Africa,2011.67,48.9376934903,consumption,High inequality
-COL,Colombia,Colombia,Latin America & Caribbean,2023,53.8819247284,income,High inequality
-COM,Comoros,Comoros,Sub-Saharan Africa,2014,45.3321861568,consumption,High inequality
+COL,Colombia,Colombia,Latin America & Caribbean,2024,54.3778252591,income,High inequality
+COM,Comoros,Comoros,Sub-Saharan Africa,2024,30.312691339199997,consumption,Moderate inequality
 CPV,Cabo Verde,Cape Verde,Sub-Saharan Africa,2015,42.3810873608,consumption,High inequality
-CRI,Costa Rica,Costa Rica,Latin America & Caribbean,2024,45.829142291000004,income,High inequality
+CRI,Costa Rica,Costa Rica,Latin America & Caribbean,2025,45.456712417599995,income,High inequality
 CYP,Cyprus,Cyprus,Europe & Central Asia,2023,31.838399725,income,Moderate inequality
 CZE,Czechia,Czech Republic,Europe & Central Asia,2023,25.7139986913,income,Low inequality
-DEU,Germany,Germany,Europe & Central Asia,2020,32.4334503407,income,Moderate inequality
+DEU,Germany,Germany,Europe & Central Asia,2022,33.6592485122,income,Moderate inequality
 DJI,Djibouti,Djibouti,"Middle East, North Africa, Afghanistan & Pakistan",2017,41.586015682799996,consumption,High inequality
 DNK,Denmark,Denmark,Europe & Central Asia,2023,29.924849655899997,income,Low inequality
 DOM,Dominican Republic,Dominican Republic,Latin America & Caribbean,2024,38.9712571405,income,Moderate inequality
 DZA,Algeria,Algeria,"Middle East, North Africa, Afghanistan & Pakistan",2011.17,27.6157308158,consumption,Low inequality
-ECU,Ecuador,Ecuador,Latin America & Caribbean,2024,45.1954747261,income,High inequality
+ECU,Ecuador,Ecuador,Latin America & Caribbean,2025,45.9200575556,income,High inequality
 EGY,"Egypt, Arab Rep.",Egypt,"Middle East, North Africa, Afghanistan & Pakistan",2021.77,28.4820371966,consumption,Low inequality
 ESP,Spain,Spain,Europe & Central Asia,2023,33.4079340811,income,Moderate inequality
 EST,Estonia,Estonia,Europe & Central Asia,2023,30.7073770912,income,Moderate inequality
@@ -51,8 +51,8 @@ FJI,Fiji,Fiji,East Asia & Pacific,2019.15,30.7068674315,consumption,Moderate ine
 FRA,France,France,Europe & Central Asia,2023,31.809308829600003,income,Moderate inequality
 FSM,"Micronesia, Fed. Sts.",Federated States of Micronesia,East Asia & Pacific,2013,40.0520394621,consumption,High inequality
 GAB,Gabon,Gabon,Sub-Saharan Africa,2017,38.0243722915,consumption,Moderate inequality
-GBR,United Kingdom,United Kingdom,Europe & Central Asia,2021,32.4146343314,income,Moderate inequality
-GEO,Georgia,Georgia,Europe & Central Asia,2024,33.853803594800006,consumption,Moderate inequality
+GBR,United Kingdom,United Kingdom,Europe & Central Asia,2021,32.4157622724,income,Moderate inequality
+GEO,Georgia,Georgia,Europe & Central Asia,2024,33.8538035947,consumption,Moderate inequality
 GHA,Ghana,Ghana,Sub-Saharan Africa,2016.75,43.5085962273,consumption,High inequality
 GIN,Guinea,Guinea,Sub-Saharan Africa,2018.5,29.591953001,consumption,Low inequality
 GMB,"Gambia, The",The Gambia,Sub-Saharan Africa,2020.08,38.7572041755,consumption,Moderate inequality
@@ -65,26 +65,26 @@ GUY,Guyana,Guyana,Latin America & Caribbean,1998,45.052830058,income,High inequa
 HND,Honduras,Honduras,Latin America & Caribbean,2024,45.676117381,income,High inequality
 HRV,Croatia,Croatia,Europe & Central Asia,2023,30.1059584299,income,Moderate inequality
 HTI,Haiti,Haiti,Latin America & Caribbean,2012,41.1023644344,consumption,High inequality
-HTI,Haiti,Haiti,Latin America & Caribbean,2012,60.4508015631,income,High inequality
+HTI,Haiti,Haiti,Latin America & Caribbean,2012,60.450801563,income,High inequality
 HUN,Hungary,Hungary,Europe & Central Asia,2017,30.5825455871,income,Moderate inequality
-IDN,Indonesia,Indonesia,East Asia & Pacific,2024,34.894393789599995,consumption,Moderate inequality
+IDN,Indonesia,Indonesia,East Asia & Pacific,2025,34.4346887635,consumption,Moderate inequality
 IND,India,India,South Asia,2022.58,25.5149963499,consumption,Low inequality
 IRL,Ireland,Ireland,Europe & Central Asia,2023,28.972471842199997,income,Low inequality
 IRN,"Iran, Islamic Rep.",Iran,"Middle East, North Africa, Afghanistan & Pakistan",2023.23,35.8847934923,consumption,Moderate inequality
-IRQ,Iraq,Iraq,"Middle East, North Africa, Afghanistan & Pakistan",2023,29.7740409958,consumption,Low inequality
+IRQ,Iraq,Iraq,"Middle East, North Africa, Afghanistan & Pakistan",2023,29.7739415784,consumption,Low inequality
 ISL,Iceland,Iceland,Europe & Central Asia,2019,26.802556869600004,income,Low inequality
-ISR,Israel,Israel,"Middle East, North Africa, Afghanistan & Pakistan",2021,37.893850154300004,income,Moderate inequality
+ISR,Israel,Israel,"Middle East, North Africa, Afghanistan & Pakistan",2022,38.306572737799996,income,Moderate inequality
 ITA,Italy,Italy,Europe & Central Asia,2023,34.3446238921,income,Moderate inequality
 JAM,Jamaica,Jamaica,Latin America & Caribbean,2021,39.874473579000004,consumption,Moderate inequality
 JOR,Jordan,Jordan,"Middle East, North Africa, Afghanistan & Pakistan",2010.24,33.655730311,consumption,Moderate inequality
-JPN,Japan,Japan,East Asia & Pacific,2020,32.3392757261,income,Moderate inequality
+JPN,Japan,Japan,East Asia & Pacific,2020,32.340069212,income,Moderate inequality
 KAZ,Kazakhstan,Kazakhstan,Europe & Central Asia,2021,29.1915315791,consumption,Low inequality
-KEN,Kenya,Kenya,Sub-Saharan Africa,2022.67,37.7437738176,consumption,Moderate inequality
-KGZ,Kyrgyz Republic,Kyrgyzstan,Europe & Central Asia,2023,27.188019812100002,consumption,Low inequality
-KIR,Kiribati,Kiribati,East Asia & Pacific,2019.27,27.832703041000002,consumption,Low inequality
-KOR,"Korea, Rep.",South Korea,East Asia & Pacific,2021,32.906573271599996,income,Moderate inequality
-LAO,Lao PDR,Laos,East Asia & Pacific,2018.42,38.8024337859,consumption,Moderate inequality
-LBN,Lebanon,Lebanon,"Middle East, North Africa, Afghanistan & Pakistan",2022.8,35.2811376782,consumption,Moderate inequality
+KEN,Kenya,Kenya,Sub-Saharan Africa,2022.67,38.532875028,consumption,Moderate inequality
+KGZ,Kyrgyz Republic,Kyrgyzstan,Europe & Central Asia,2024,27.545697544499998,consumption,Low inequality
+KIR,Kiribati,Kiribati,East Asia & Pacific,2023.42,24.7371601878,consumption,Low inequality
+KOR,"Korea, Rep.",South Korea,East Asia & Pacific,2021,32.907641945799995,income,Moderate inequality
+LAO,Lao PDR,Laos,East Asia & Pacific,2024,34.746496544,consumption,Moderate inequality
+LBN,Lebanon,Lebanon,"Middle East, North Africa, Afghanistan & Pakistan",2022.8,35.479526614099996,consumption,Moderate inequality
 LBR,Liberia,Liberia,Sub-Saharan Africa,2016,35.2654394732,consumption,Moderate inequality
 LCA,St. Lucia,St. Lucia,Latin America & Caribbean,2015.78,43.6934194418,consumption,High inequality
 LCA,St. Lucia,St. Lucia,Latin America & Caribbean,2015.78,51.2250668185,income,High inequality
@@ -97,15 +97,15 @@ MAR,Morocco,Morocco,"Middle East, North Africa, Afghanistan & Pakistan",2013.5,3
 MDA,Moldova,Moldova,Europe & Central Asia,2023,26.7647529484,consumption,Low inequality
 MDG,Madagascar,Madagascar,Sub-Saharan Africa,2021.75,36.819211454299996,consumption,Moderate inequality
 MDV,Maldives,Maldives,South Asia,2019.6,29.285091269800002,consumption,Low inequality
-MEX,Mexico,Mexico,Latin America & Caribbean,2022,43.4540071467,income,High inequality
+MEX,Mexico,Mexico,Latin America & Caribbean,2024,42.6291577572,income,High inequality
 MHL,Marshall Islands,Marshall Islands,East Asia & Pacific,2019.5,35.482942888000004,consumption,Moderate inequality
 MKD,North Macedonia,Republic of Macedonia,Europe & Central Asia,2019,33.5058314179,income,Moderate inequality
 MLI,Mali,Mali,Sub-Saharan Africa,2021.57,35.6535942464,consumption,Moderate inequality
-MLT,Malta,Malta,"Middle East, North Africa, Afghanistan & Pakistan",2022,34.587276272900006,income,Moderate inequality
+MLT,Malta,Malta,"Middle East, North Africa, Afghanistan & Pakistan",2023,31.7798995125,income,Moderate inequality
 MMR,Myanmar,Myanmar,East Asia & Pacific,2017,30.6968695324,consumption,Moderate inequality
 MNE,Montenegro,Montenegro,Europe & Central Asia,2021,34.2969735974,income,Moderate inequality
 MNG,Mongolia,Mongolia,East Asia & Pacific,2022,31.4164745932,consumption,Moderate inequality
-MOZ,Mozambique,Mozambique,Sub-Saharan Africa,2022.08,49.557134678800004,consumption,High inequality
+MOZ,Mozambique,Mozambique,Sub-Saharan Africa,2022.08,49.557134678699995,consumption,High inequality
 MRT,Mauritania,Mauritania,Sub-Saharan Africa,2019.6,31.996747568599996,consumption,Moderate inequality
 MUS,Mauritius,Mauritius,Sub-Saharan Africa,2017,36.761205938,consumption,Moderate inequality
 MWI,Malawi,Malawi,Sub-Saharan Africa,2019.31,38.542736815299996,consumption,Moderate inequality
@@ -118,7 +118,7 @@ NLD,Netherlands,Netherlands,Europe & Central Asia,2021,25.7438692891,income,Low 
 NOR,Norway,Norway,Europe & Central Asia,2023,26.5308108802,income,Low inequality
 NPL,Nepal,Nepal,South Asia,2022.5,30.020262481600003,consumption,Moderate inequality
 NRU,Nauru,Nauru,East Asia & Pacific,2012.69,32.3615792583,consumption,Moderate inequality
-PAK,Pakistan,Pakistan,"Middle East, North Africa, Afghanistan & Pakistan",2018.5,29.5892655976,consumption,Low inequality
+PAK,Pakistan,Pakistan,"Middle East, North Africa, Afghanistan & Pakistan",2024.6,33.5363218402,consumption,Moderate inequality
 PAN,Panama,Panama,Latin America & Caribbean,2024,49.7335432231,income,High inequality
 PER,Peru,Peru,Latin America & Caribbean,2024,40.1258629673,income,High inequality
 PHL,Philippines,Philippines,East Asia & Pacific,2023,35.203486233999996,consumption,Moderate inequality
@@ -136,8 +136,8 @@ SDN,Sudan,Sudan,Sub-Saharan Africa,2014,34.2429421871,consumption,Moderate inequ
 SEN,Senegal,Senegal,Sub-Saharan Africa,2021.71,36.1577212421,consumption,Moderate inequality
 SLB,Solomon Islands,Solomon Islands,East Asia & Pacific,2012.79,37.0549269732,consumption,Moderate inequality
 SLE,Sierra Leone,Sierra Leone,Sub-Saharan Africa,2018,35.690177559199995,consumption,Moderate inequality
-SLV,El Salvador,El Salvador,Latin America & Caribbean,2023,39.8023791927,income,Moderate inequality
-SRB,Serbia,Serbia,Europe & Central Asia,2022,32.8028880557,income,Moderate inequality
+SLV,El Salvador,El Salvador,Latin America & Caribbean,2023,39.8023791926,income,Moderate inequality
+SRB,Serbia,Serbia,Europe & Central Asia,2023,32.815232451,income,Moderate inequality
 SSD,South Sudan,South Sudan,Sub-Saharan Africa,2016.5,44.0478106873,consumption,High inequality
 STP,São Tomé and Príncipe,São Tomé and Príncipe,Sub-Saharan Africa,2017,40.7294816336,consumption,High inequality
 SUR,Suriname,Suriname,Latin America & Caribbean,2022,39.179896748,consumption,Moderate inequality
@@ -146,31 +146,31 @@ SVN,Slovenia,Slovenia,Europe & Central Asia,2023,24.6819581905,income,Low inequa
 SWE,Sweden,Sweden,Europe & Central Asia,2023,29.2783302864,income,Low inequality
 SWZ,Eswatini,Eswatini,Sub-Saharan Africa,2016.17,54.5797936695,consumption,High inequality
 SYC,Seychelles,Seychelles,Sub-Saharan Africa,2018.08,32.125319711,income,Moderate inequality
-SYR,Syrian Arab Republic,Syria,"Middle East, North Africa, Afghanistan & Pakistan",2022,26.628073115200003,consumption,Low inequality
+SYR,Syrian Arab Republic,Syria,"Middle East, North Africa, Afghanistan & Pakistan",2022,26.374962265200004,consumption,Low inequality
 TCD,Chad,Chad,Sub-Saharan Africa,2022,37.357686373,consumption,Moderate inequality
 TGO,Togo,Togo,Sub-Saharan Africa,2021.63,37.8580048835,consumption,Moderate inequality
-THA,Thailand,Thailand,East Asia & Pacific,2023,33.49489074,consumption,Moderate inequality
+THA,Thailand,Thailand,East Asia & Pacific,2024,33.3187820357,consumption,Moderate inequality
 TJK,Tajikistan,Tajikistan,Europe & Central Asia,2024,36.108003229199994,consumption,Moderate inequality
 TKM,Turkmenistan,Turkmenistan,Europe & Central Asia,1998,40.8069274032,consumption,High inequality
-TLS,Timor-Leste,Timor-Leste,East Asia & Pacific,2014,28.652926359699997,consumption,Low inequality
+TLS,Timor-Leste,Timor-Leste,East Asia & Pacific,2014.31,28.652926359699997,consumption,Low inequality
 TON,Tonga,Tonga,East Asia & Pacific,2021,27.0957647994,consumption,Low inequality
 TTO,Trinidad and Tobago,Trinidad and Tobago,Latin America & Caribbean,1992,40.1854507123,income,High inequality
 TUN,Tunisia,Tunisia,"Middle East, North Africa, Afghanistan & Pakistan",2021.23,33.7164263054,consumption,Moderate inequality
-TUR,Türkiye,Türkiye,Europe & Central Asia,2022,44.4676749728,income,High inequality
+TUR,Türkiye,Türkiye,Europe & Central Asia,2023,43.6758233783,income,High inequality
 TUV,Tuvalu,Tuvalu,East Asia & Pacific,2010,39.1390333816,consumption,Moderate inequality
-TWN,"Taiwan, China","Taiwan, China",East Asia & Pacific,2021,31.566375906100003,income,Moderate inequality
+TWN,"Taiwan, China","Taiwan, China",East Asia & Pacific,2021,31.567581937599996,income,Moderate inequality
 TZA,Tanzania,Tanzania,Sub-Saharan Africa,2017.92,40.4912299518,consumption,High inequality
 UGA,Uganda,Uganda,Sub-Saharan Africa,2019.64,42.7021769098,consumption,High inequality
 UKR,Ukraine,Ukraine,Europe & Central Asia,2020,25.6273613123,consumption,Low inequality
 URY,Uruguay,Uruguay,Latin America & Caribbean,2024,39.9841460249,income,Moderate inequality
-USA,United States,United States of America,North America,2023,41.8188785856,income,High inequality
-UZB,Uzbekistan,Uzbekistan,Europe & Central Asia,2024,34.5633643618,income,Moderate inequality
+USA,United States,United States of America,North America,2024,41.7625281746,income,High inequality
+UZB,Uzbekistan,Uzbekistan,Europe & Central Asia,2025,32.6569911977,income,Moderate inequality
 VEN,"Venezuela, RB","Venezuela, RB",Latin America & Caribbean,2006,44.6983628572,income,High inequality
 VNM,Viet Nam,Vietnam,East Asia & Pacific,2022,36.0930040903,consumption,Moderate inequality
 VUT,Vanuatu,Vanuatu,East Asia & Pacific,2019.21,32.3175747576,consumption,Moderate inequality
 WSM,Samoa,Samoa,East Asia & Pacific,2013.25,38.7434549758,consumption,Moderate inequality
-XKX,Kosovo,Kosovo,Europe & Central Asia,2022,38.305665531100004,income,Moderate inequality
+XKX,Kosovo,Kosovo,Europe & Central Asia,2022,38.3056655312,income,Moderate inequality
 YEM,"Yemen, Rep.",Yemen,"Middle East, North Africa, Afghanistan & Pakistan",2014,36.707094342699996,consumption,Moderate inequality
-ZAF,South Africa,South Africa,Sub-Saharan Africa,2014.83,63.0257167965,consumption,High inequality
+ZAF,South Africa,South Africa,Sub-Saharan Africa,2022.85,54.0539467389,consumption,High inequality
 ZMB,Zambia,Zambia,Sub-Saharan Africa,2022,51.4849457197,consumption,High inequality
 ZWE,Zimbabwe,Zimbabwe,Sub-Saharan Africa,2019,50.2564510456,consumption,High inequality
