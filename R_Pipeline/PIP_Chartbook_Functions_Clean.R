@@ -270,26 +270,11 @@ build_fig1_2 <- function(dta_proj, dta_pip, pov_lines, general_year_start, line3
 build_fig3 <- function(dta_fig_3,
                        general_year_start = 1990,
                        bridge_year = 2024,
-                       regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD"),
-                       regions_name = c(
-                         "Eastern and Southern Africa",
-                         "Western and Central Africa",
-                         "East Asia & Pacific",
-                         "Europe & Central Asia",
-                         "Latin America & Caribbean",
-                         "Middle East, North Africa, Afghanistan & Pakistan",
-                         "North America",
-                         "South Asia",
-                         "Sub-Saharan Africa",
-                         "World"
-                       )) {
+                       regions = c("AFE","AFW","EAS","ECS","LCN","MEA","NAC","SAS","SSF","WLD")) {
   
   # deps
   require(dplyr)
   require(tidyr)
-  require(stringr)
-  # small helper (safe numeric)
-  clean_to_numeric <- function(x) suppressWarnings(readr::parse_number(as.character(x)))
   
   # ---- STEP 1. Filter, recode, prepare
   dta_long <- dta_fig_3 %>%
@@ -297,25 +282,26 @@ build_fig3 <- function(dta_fig_3,
     dplyr::mutate(
       hc = headcount * 100,
       estimate_type = dplyr::case_when(
-        estimate_type == "actual" ~ "obs",
+        estimate_type == "actual"                      ~ "obs",
         estimate_type %in% c("projection", "nowcast") ~ "proj",
         TRUE ~ estimate_type
       ),
       year = as.character(year)
     ) %>%
-    dplyr::select(poverty_line, year, region_name, estimate_type, hc)
+    dplyr::select(poverty_line, year, region_code, estimate_type, hc)
   
-  # ---- STEP 2. Wide reshape: Region x estimate_type
+  # ---- STEP 2. Wide reshape: region_code x estimate_type
   dta_wide <- dta_long %>%
     tidyr::pivot_wider(
-      names_from  = c(region_name, estimate_type),
+      names_from  = c(region_code, estimate_type),
       values_from = hc,
-      names_glue  = "{region_name}_{estimate_type}"
+      names_glue  = "{region_code}_{estimate_type}"
     ) %>%
     dplyr::arrange(poverty_line, as.numeric(year))
   
-  # ---- STEP 3. Bridge missing projections in a specific year
-  for (r in regions_name) {
+  # ---- STEP 3. Fill bridge year gap for all regions (to connect dotted lines)
+  # -> ADJUST EVERY YEAR AS NEEDED
+  for (r in regions) {
     proj <- paste0(r, "_proj"); obs <- paste0(r, "_obs")
     if (proj %in% names(dta_wide) && obs %in% names(dta_wide)) {
       dta_wide[[proj]] <- ifelse(dta_wide$year == as.character(bridge_year) &
@@ -324,104 +310,75 @@ build_fig3 <- function(dta_fig_3,
     }
   }
   
-  # ---- STEP 4. Smooth transitions around projection blocks
-  dta_wide$year <- as.integer(dta_wide$year)
-  dta_wide <- dplyr::arrange(dta_wide, poverty_line, year)
+  # ---- STEP 4. Additional gap fills (adjust every year as needed)
+  # dta_wide <- dta_wide %>%
+  #   dplyr::mutate(
+  #     WLD_proj = dplyr::if_else(year %in% c("2018","2020"),                               WLD_obs, WLD_proj),
+  #     MEA_proj = dplyr::if_else(year %in% c("2001","2003"),                               MEA_obs, MEA_proj),
+  #     SAS_proj = dplyr::if_else(year %in% c("1996","2002","2014","2020"),                 SAS_obs, SAS_proj),
+  #     AFE_proj = dplyr::if_else(year %in% c("1993","1996","1998","2018","2020","2023"),   AFE_obs, AFE_proj),
+  #     AFW_proj = dplyr::if_else(year %in% c("1999","2001","2006","2008"),                 AFW_obs, AFW_proj)
+  #   )
   
-  proj_cols <- grep("_proj$", names(dta_wide), value = TRUE)
-  grp_idx   <- split(seq_len(nrow(dta_wide)), dta_wide$poverty_line)
-  
-  for (col in proj_cols) {
-    obs_col <- sub("_proj$", "_obs", col)
-    if (!obs_col %in% names(dta_wide)) next
-    
-    for (rows in grp_idx) {
-      yr   <- dta_wide$year[rows]
-      proj <- dta_wide[rows, col][[1]]
-      obs  <- dta_wide[rows, obs_col][[1]]
-      
-      proj_idx <- which(!is.na(proj))
-      if (length(proj_idx) == 0L) next
-      
-      cut_points  <- c(1L, which(diff(proj_idx) > 1L) + 1L)
-      block_start <- proj_idx[cut_points]
-      block_end   <- proj_idx[c(cut_points[-1] - 1L, length(proj_idx))]
-      
-      for (b in seq_along(block_start)) {
-        s <- block_start[b]; e <- block_end[b]
-        if (s > 1L) {
-          before_idx <- s - 1L
-          if (!is.na(obs[before_idx])) proj[before_idx] <- obs[before_idx]
-        }
-        if (e < length(proj)) {
-          after_idx <- e + 1L
-          if (!is.na(obs[after_idx])) proj[after_idx] <- obs[after_idx]
-        }
-      }
-      
-      next_has_proj <- c(!is.na(proj[-1]) & yr[-1] == yr[-length(yr)] + 1L, FALSE)
-      fill_here <- is.na(proj) & next_has_proj
-      if (any(fill_here)) proj[fill_here] <- obs[fill_here]
-      
-      dta_wide[rows, col] <- proj
-    }
-  }
-  
-  # ---- STEP 5. Column order + display names
-  new_col_order <- c(
-    "poverty_line","year",
-    "World_obs","World_proj",
-    "East Asia & Pacific_obs","East Asia & Pacific_proj",
-    "Europe & Central Asia_obs","Europe & Central Asia_proj",
-    "Latin America & Caribbean_obs","Latin America & Caribbean_proj",
-    "Middle East, North Africa, Afghanistan & Pakistan_obs",
-    "Middle East, North Africa, Afghanistan & Pakistan_proj",
-    "North America_obs","North America_proj",
-    "South Asia_obs","South Asia_proj",
-    "Sub-Saharan Africa_obs","Sub-Saharan Africa_proj",
-    "Eastern and Southern Africa_obs","Eastern and Southern Africa_proj",
-    "Western and Central Africa_obs","Western and Central Africa_proj"
+  # ---- STEP 5. Column order
+  col_order <- c(
+    "poverty_line", "year",
+    "WLD_obs", "WLD_proj",
+    "EAS_obs", "EAS_proj",
+    "ECS_obs", "ECS_proj",
+    "LCN_obs", "LCN_proj",
+    "MEA_obs", "MEA_proj",
+    "NAC_obs", "NAC_proj",
+    "SAS_obs", "SAS_proj",
+    "SSF_obs", "SSF_proj",
+    "AFE_obs", "AFE_proj",
+    "AFW_obs", "AFW_proj"
   )
   
-  # silently keep only those that exist (some projects may miss some regions)
-  keep_cols <- intersect(new_col_order, names(dta_wide))
+  keep_cols <- intersect(col_order, names(dta_wide))
   dta_wide  <- dplyr::select(dta_wide, dplyr::any_of(keep_cols))
   
-  new_names <- c(
-    "Poverty line",
-    "Year",
-    "World","World (Projection)",
-    "East Asia & Pacific","East Asia & Pacific (Projection)",
-    "Europe & Central Asia","Europe & Central Asia (Projection)",
-    "Latin America & Caribbean","Latin America & Caribbean (Projection)",
-    "Middle East, North Africa, Afghanistan & Pakistan",
-    "Middle East, North Africa, Afghanistan & Pakistan (Projection)",
-    "North America","North America (Projection)",
-    "South Asia","South Asia (Projection)",
-    "Sub-Saharan Africa","Sub-Saharan Africa (Projection)",
-    "Eastern & Southern Africa","Eastern & Southern Africa (Projection)",
-    "Western & Central Africa","Western & Central Africa (Projection)"
-  )[seq_along(keep_cols)]
-  
-  colnames(dta_wide) <- new_names
-  
-  # ---- STEP 6. Poverty line labels, rounding, blanks
+  # ---- STEP 6. Poverty line labels, rounding, blanks, rename
   out <- dta_wide %>%
     dplyr::mutate(
-      `Poverty line` = dplyr::case_when(
-        round(as.numeric(`Poverty line`), 1) == 3.0 ~ "$3.00 (2021 PPP)",
-        round(as.numeric(`Poverty line`), 1) == 4.2 ~ "$4.20 (2021 PPP)",
-        round(as.numeric(`Poverty line`), 1) == 8.3 ~ "$8.30 (2021 PPP)",
-        TRUE ~ as.character(`Poverty line`)
+      poverty_line = dplyr::case_when(
+        round(as.numeric(poverty_line), 1) == 3.0 ~ "$3.00 (2021 PPP)",
+        round(as.numeric(poverty_line), 1) == 4.2 ~ "$4.20 (2021 PPP)",
+        round(as.numeric(poverty_line), 1) == 8.3 ~ "$8.30 (2021 PPP)",
+        TRUE ~ as.character(poverty_line)
       )
     ) %>%
     dplyr::mutate(
       dplyr::across(
-        -c(Year, `Poverty line`),
-        ~ round(clean_to_numeric(.), 1)
+        -c(year, poverty_line),
+        ~ round(suppressWarnings(as.numeric(.)), 1)
       )
     ) %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), ~ ifelse(is.na(.), "", .)))
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~ ifelse(is.na(.), "", .))) %>%
+    dplyr::rename(
+      "Poverty line"                                                          = poverty_line,
+      "Year"                                                                  = year,
+      "World (Observed)"                                                      = WLD_obs,
+      "World"                                                                 = WLD_proj,
+      "East Asia & Pacific (Observed)"                                        = EAS_obs,
+      "East Asia & Pacific"                                                   = EAS_proj,
+      "Europe & Central Asia (Observed)"                                      = ECS_obs,
+      "Europe & Central Asia"                                                 = ECS_proj,
+      "Latin America & Caribbean (Observed)"                                  = LCN_obs,
+      "Latin America & Caribbean"                                             = LCN_proj,
+      "Middle East, North Africa, Afghanistan & Pakistan (Observed)"          = MEA_obs,
+      "Middle East, North Africa, Afghanistan & Pakistan"                     = MEA_proj,
+      "North America (Observed)"                                              = NAC_obs,
+      "North America"                                                         = NAC_proj,
+      "South Asia (Observed)"                                                 = SAS_obs,
+      "South Asia"                                                            = SAS_proj,
+      "Sub-Saharan Africa (Observed)"                                         = SSF_obs,
+      "Sub-Saharan Africa"                                                    = SSF_proj,
+      "Eastern & Southern Africa (Observed)"                                  = AFE_obs,
+      "Eastern & Southern Africa"                                             = AFE_proj,
+      "Western & Central Africa (Observed)"                                   = AFW_obs,
+      "Western & Central Africa"                                              = AFW_proj
+    )
   
   return(out)
 }

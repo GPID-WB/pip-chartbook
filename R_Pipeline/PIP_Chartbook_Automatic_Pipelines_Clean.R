@@ -55,7 +55,7 @@ millions3pct2030 <- 256
 
 # F3 - Poverty rates by region
 # *********
-year_bridge_fig3 <- 2025
+year_bridge_fig3 <- 2024
   
 # F4 & 5 - Projections of poverty until 2050 under different scenarios
 # *********
@@ -232,7 +232,7 @@ write_csv(dta_fig_2_final, "csv/chartbook_F2.csv")
 # ---- F3 - Poverty rates by region ----
 
 dta_fig_3 <- dta_pip %>%
-  select(poverty_line, region_code, region_name, year, headcount, estimate_type)
+  select(poverty_line, region_code, year, headcount, estimate_type)
 
 dta_fig_3_final <- build_fig3(
   dta_fig_3          = dta_fig_3,
