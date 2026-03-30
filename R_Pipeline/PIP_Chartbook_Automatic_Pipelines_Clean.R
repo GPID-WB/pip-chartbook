@@ -88,8 +88,7 @@ dta_pip <- get_wb(
   release_version = NULL,
   api_version = "v1",
   format = c("rds", "json", "csv"),
-  simplify = TRUE,
-  server = "qa"
+  simplify = TRUE
 )
 
 dta_pip_ctry <- get_stats(
@@ -97,16 +96,14 @@ dta_pip_ctry <- get_stats(
   year = "all", 
   reporting_level = "national", 
   povline = pov_lines,
-  nowcast = TRUE,
-  server = "qa"
+  nowcast = TRUE
 )
 
 dta_pip_ctry_v2 <- get_stats(
   country = "all", 
   year = "all", 
   reporting_level = "national", 
-  povline = "3.0",
-  server = "qa"
+  povline = "3.0"
 )
 
 # Fetch all national + subnational data first
@@ -114,8 +111,7 @@ dta_pip_ctry_v2 <- get_stats(
   country = "all",
   year = "all",
   reporting_level = "all",   # include all levels
-  povline = pov_lines,
-  server = "qa"
+  povline = pov_lines
 ) %>%
   dplyr::filter(
     # keep national for all except Argentina
@@ -136,7 +132,7 @@ dta_class <- read_dta("https://raw.githubusercontent.com/GPID-WB/Class/master/Ou
 
 ## 3) 2026-2030 Projection 
 # ***********************
-dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_2026_2030_20250930_2021_01_02_PROD.dta") %>%
+dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_2027_2030_20260324_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -147,7 +143,7 @@ dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/ma
          poverty_severity = poverty_severity/100,
          pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
 
-dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_1981_2050_20250930_2021_01_02_PROD.dta") %>%
+dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_1981_2050_20260324_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -158,7 +154,7 @@ dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook
          poverty_severity = poverty_severity/100,
          pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
 
-dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_2026_2030_20250930_2021_01_02_PROD.dta") %>%
+dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_2027_2030_20260324_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -168,7 +164,7 @@ dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbo
 
 ## 4) 2026 - 2050 Scenario Projection 
 # ***********************
-dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2026_2050_20250930_2021_01_02_PROD.dta") %>%
+dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2027_2050_20260324_2021_01_02_PROD.dta") %>%
   select(code, year, scenario, povertyline, pop, fgt0)
 
 
