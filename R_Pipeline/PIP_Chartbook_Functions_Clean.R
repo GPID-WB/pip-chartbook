@@ -1184,11 +1184,11 @@ build_fig18 <- function(df, target_years = target_years, n = 100) {
       gwelf1990_2008 = log(w_2008 / w_1990) / (2008 - 1990) * 100,
       gwelf1990_2010 = log(w_2010 / w_1990) / (2010 - 1990) * 100,
       gwelf1990_2019 = log(w_2019 / w_1990) / (2019 - 1990) * 100,
-      gwelf1990_2025 = log(w_2025 / w_1990) / (2025 - 1990) * 100,
+      gwelf1990_2026 = log(w_2026 / w_1990) / (2026 - 1990) * 100,
 
       gwelf2000_2010 = log(w_2010 / w_2000) / (2010 - 2000) * 100,
       gwelf2010_2019 = log(w_2019 / w_2010) / (2019 - 2010) * 100,
-      gwelf2019_2025 = log(w_2025 / w_2019) / (2025 - 2019) * 100
+      gwelf2019_2026 = log(w_2026 / w_2019) / (2026 - 2019) * 100
     ) %>%
     # Hide P1 and P100 like Stata:
     mutate(across(starts_with("gwelf"),
@@ -1202,11 +1202,11 @@ build_fig18 <- function(df, target_years = target_years, n = 100) {
       "1990–2008" = gwelf1990_2008,
       "1990–2010" = gwelf1990_2010,
       "1990–2019" = gwelf1990_2019,
-      "1990–2025" = gwelf1990_2025, 
+      "1990–2026" = gwelf1990_2026, 
 
       "2000–2010" = gwelf2000_2010,
       "2010–2019" = gwelf2010_2019,
-      "2019–2025" = gwelf2019_2025
+      "2019–2026" = gwelf2019_2026
     )
 
   # Return everything in case you want to inspect intermediate objects

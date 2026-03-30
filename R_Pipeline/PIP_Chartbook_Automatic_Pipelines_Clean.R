@@ -175,7 +175,7 @@ WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
 
 ## 6) One thousand bin data
 # ***********************
-dta_inc_dist <- read_dta("dta/country_income_distribution.dta") %>%
+dta_inc_dist <- read_dta("dta/country_income_distribution_20260324_2021_01_02_PROD.dta") %>%
   rename(
     country_code = code, 
     population = pop,
@@ -183,9 +183,9 @@ dta_inc_dist <- read_dta("dta/country_income_distribution.dta") %>%
     headcount = pov
   )
 
-# dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.dta")
+dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_2026_20260324_2021_01_02_PROD.dta")
 
-dta_1000_bins <- readr::read_csv("https://datacatalogfiles.worldbank.org/ddh-published/0064304/DR0094423/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.csv")
+# dta_1000_bins <- readr::read_csv("https://datacatalogfiles.worldbank.org/ddh-published/0064304/DR0094423/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.csv")
 
 # ************************************
 # ---- Section #4. Load Functions ----
