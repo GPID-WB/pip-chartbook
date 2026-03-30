@@ -1,6 +1,6 @@
 
 // binned data source: https://datacatalog.worldbank.org/search/dataset/0064304/1000_binned_global_distribution
-use "C:\Users\wb562356\OneDrive - WBG\Documents\PovcalNet related\PIP bins\20250930_2021_01_02_PROD\03-output\GlobalDist1000bins_1981_2025_20250930_2021_01_02_PROD.dta", clear
+use "C:\Users\wb619847\OneDrive - WBG\Other tasks\country_income_distribution\GlobalDist1000bins_1990_2026_20260324_2021_01_02_PROD.dta", clear
 
 // estimate poverty for various poverty lines
 forval l = 0.5(0.5)25 {
