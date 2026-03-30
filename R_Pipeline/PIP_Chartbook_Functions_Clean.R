@@ -543,7 +543,7 @@ build_fig7 <- function(dta_pip_ctry, target_year = 2025) {
   # ---- 1) Select and compute
   dta_fig_7_final <- dta_pip_ctry %>%
     select(year, region_name, country_name, headcount, pop, poverty_line) %>%
-    mutate(pop_in_poverty = as.integer((pop * headcount) / 1000000)) %>%
+    mutate(pop_in_poverty = round((pop * headcount) / 1000000, 2)) %>%
     group_by(country_name) %>%
     filter(year == target_year) %>%
     select(-year) %>%
