@@ -132,7 +132,7 @@ dta_class <- read_dta("https://raw.githubusercontent.com/GPID-WB/Class/master/Ou
 
 ## 3) 2026-2030 Projection 
 # ***********************
-dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_2027_2030_20260324_2021_01_02_PROD.dta") %>%
+dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_2027_2030_20260922_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -143,7 +143,7 @@ dta_proj <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/ma
          poverty_severity = poverty_severity/100,
          pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
 
-dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_1981_2050_20260324_2021_01_02_PROD.dta") %>%
+dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Global_FGT_1981_2050_20260922_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -154,7 +154,7 @@ dta_proj_v2 <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook
          poverty_severity = poverty_severity/100,
          pop_in_poverty = pop_in_poverty * 1000000) # make sure units are consistent with PIP
 
-dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_2027_2030_20260324_2021_01_02_PROD.dta") %>%
+dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_2027_2030_20260922_2021_01_02_PROD.dta") %>%
   rename(poverty_line = povertyline,
          pop_in_poverty = poorpop, 
          headcount = fgt0, 
@@ -164,7 +164,7 @@ dta_proj_ctry <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbo
 
 ## 4) 2026 - 2050 Scenario Projection 
 # ***********************
-dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2027_2050_20260324_2021_01_02_PROD.dta") %>%
+dta_proj_scen <- read_dta("https://raw.githubusercontent.com/GPID-WB/pip-chartbook/main/dta/Country_FGT_VariousScenarios_2027_2050_20260922_2021_01_02_PROD.dta") %>%
   select(code, year, scenario, povertyline, pop, fgt0)
 
 
@@ -175,7 +175,7 @@ WDI_Gini <- WDI(indicator = "SI.POV.GINI", extra = TRUE)
 
 ## 6) One thousand bin data
 # ***********************
-dta_inc_dist <- read_dta("dta/country_income_distribution_20260324_2021_01_02_PROD.dta") %>%
+dta_inc_dist <- read_dta("dta/country_income_distribution_20260922_2021_01_02_PROD.dta") %>%
   rename(
     country_code = code, 
     population = pop,
@@ -183,7 +183,7 @@ dta_inc_dist <- read_dta("dta/country_income_distribution_20260324_2021_01_02_PR
     headcount = pov
   )
 
-dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_2026_20260324_2021_01_02_PROD.dta")
+dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_2026_20260922_2021_01_02_PROD.dta")
 
 # dta_1000_bins <- readr::read_csv("https://datacatalogfiles.worldbank.org/ddh-published/0064304/DR0094423/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.csv")
 
