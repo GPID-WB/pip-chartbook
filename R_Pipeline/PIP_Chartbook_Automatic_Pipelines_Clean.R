@@ -5,7 +5,7 @@
 ## Author: Martha Celmira Viveros Mendoza,         ###
 ##         Kayley Ashlynn Watson, Jing Xie,        ###
 ##         Christoph Lakner, Nishant Yonzan        ###
-## Latest Updates: March 24th, 2026                ### 
+## Latest Updates: Sept 14th, 2026                 ### 
 ## ***************************************************
 
 ## Objective of this workbook is to create a live 
@@ -15,6 +15,8 @@
 ## Clean Environment
 rm(list = ls())
 
+# From Github
+# devtools::install_github("worldbank/pipr")
 
 # ************************************
 # ---- Section #1. Load Packages ----
@@ -83,12 +85,12 @@ target_years <- c(1990, 2000, 2008, 2010, 2019, 2026)
 dta_pip <- get_wb(
   year = "all",
   povline = pov_lines,
-  version = NULL,
   ppp_version = 2021,
-  release_version = NULL,
   api_version = "v1",
   format = c("rds", "json", "csv"),
-  simplify = TRUE
+  simplify = TRUE, 
+  server = "qa", 
+  version = "20260922_2021_01_02_PROD"
 )
 
 dta_pip_ctry <- get_stats(
@@ -96,7 +98,9 @@ dta_pip_ctry <- get_stats(
   year = "all", 
   reporting_level = "national", 
   povline = pov_lines,
-  nowcast = TRUE
+  nowcast = TRUE, 
+  server = "qa", 
+  version = "20260922_2021_01_02_PROD"
 )
 
 dta_pip_ctry_v2 <- get_stats(
@@ -183,7 +187,7 @@ dta_inc_dist <- read_dta("dta/country_income_distribution_20260922_2021_01_02_PR
     headcount = pov
   )
 
-dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1990_2026_20260922_2021_01_02_PROD.dta")
+dta_1000_bins <- read_dta("dta/GlobalDist1000bins_1981_2050_20260922_2021_01_02_PROD.dta")
 
 # dta_1000_bins <- readr::read_csv("https://datacatalogfiles.worldbank.org/ddh-published/0064304/DR0094423/GlobalDist1000bins_1990_20250930_2021_01_02_PROD.csv")
 

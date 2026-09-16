@@ -1,6 +1,6 @@
 
 // binned data source: https://datacatalog.worldbank.org/search/dataset/0064304/1000_binned_global_distribution
-use "C:\Users\wb619847\OneDrive - WBG\Other tasks\country_income_distribution\GlobalDist1000bins_1990_2026_20260324_2021_01_02_PROD.dta", clear
+use "C:\WBG\pip-chartbook\dta\GlobalDist1000bins_1981_2050_20260922_2021_01_02_PROD.dta", clear
 
 // estimate poverty for various poverty lines
 forval l = 0.5(0.5)25 {
@@ -13,3 +13,4 @@ collapse (mean) pov* (rawsum) pop [aw=pop], by(code year)
 reshape long pov, i(code year pop) j(povertyline)
 replace povertyline = povertyline/10
 
+save "C:\WBG\pip-chartbook\dta\country_income_distribution_20260922_2021_01_02_PROD.dta"

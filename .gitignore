@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Large Stata distribution files (exceed GitHub 100MB limit)
+dta/GlobalDist1000bins_*.dta
